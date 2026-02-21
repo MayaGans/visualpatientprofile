@@ -64,8 +64,10 @@
     .panel-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
     .header-actions { display: flex; align-items: center; gap: 12px; }
     .toggle-icon { font-size: 12px; color: var(--accent-blue); font-weight: 500; cursor: pointer; }
+    
     .add-group-btn { width: 20px; height: 20px; border-radius: 50%; background: #e5e5ea; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 400; cursor: pointer; transition: background 0.2s; }
     .add-group-btn:hover { background: #d1d1d6; }
+    
     .panel-content { margin-top: 12px; display: none; }
     .panel-content.open { display: block; animation: slideDown 0.2s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -80,6 +82,18 @@
     .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .pill { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--accent-blue-dim); border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; font-size: 11px; color: var(--accent-blue); font-weight: 500; }
     .pill-remove { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 113, 227, 0.1); font-size: 10px; line-height: 1; }
+
+    /* CUSTOM GROUP MODAL CSS */
+    .add-group-modal { background: #fff; border: 1px solid #d1d1d6; border-radius: 10px; padding: 12px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .modal-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .modal-input { padding: 6px 10px; border: 1px solid #d1d1d6; border-radius: 6px; font-size: 12px; flex: 1; outline: none; }
+    .lab-select-list { max-height: 150px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 6px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .lab-option { padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+    .lab-option.checked { background: var(--accent-blue-dim); color: var(--accent-blue); font-weight: 500; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 12px; cursor: pointer; border: none; font-weight: 500; }
+    .btn-cancel { background: #e5e5ea; color: #333; }
+    .btn-save { background: var(--accent-blue); color: white; }
 
     .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; }
     #global-interaction-layer { position: absolute; left: 160px; top: 0; width: 800px; z-index: 50; height: 100%; pointer-events: none; } 
@@ -263,9 +277,21 @@
             <span class="panel-title">Laboratory Parameters</span>
           </div>
           <div class="header-actions">
+            <div class="add-group-btn" onclick="openGroupModal()" title="Create Custom Group">+</div>
             <span class="toggle-icon" id="toggle-label-labs" onclick="togglePicker('labs')">Edit</span>
           </div>
         </div>
+        
+        <div id="add-group-modal" class="add-group-modal hidden">
+          <div class="panel-title" style="margin-bottom:8px">Create New Group</div>
+          <div class="modal-row"><input type="text" id="new-group-name" class="modal-input" placeholder="Group Name"></div>
+          <div class="lab-select-list" id="modal-lab-list"></div>
+          <div class="modal-footer">
+            <button class="btn-sm btn-cancel" onclick="closeGroupModal()">Cancel</button>
+            <button class="btn-sm btn-save" onclick="saveNewGroup()">Save</button>
+          </div>
+        </div>
+
         <div id="labs-pills" class="pills-container hidden" style="margin-top:8px"></div>
         <div id="labs-content" class="panel-content">
           <div class="segmented-control" id="tabNav"></div>
@@ -352,6 +378,10 @@
   const allTestsList = Object.values(defaultTests).flat();
   let selectedTests = ["Albumin", "Total Protein", "ALT", "CK", "HGB"];
   let selectedVitals = ["Heart Rate"];
+  
+  // Custom groups state
+  let customGroups = {};
+  let tempGroupSelection = [];
 
   // Comments Key format: `laneId|recordName|day` (e.g., "ae|Rash|60")
   let commentsStore = {};
@@ -564,7 +594,7 @@
     stripRow.append("div").attr("class", "comment-strip-y-axis");
   }
 
-  // --- UI STATE ---
+  // --- UI STATE & MODALS ---
   let activeLabTab = "Chemistry";
   let panelsState = { labs: true, vitals: false };
 
@@ -579,7 +609,52 @@
     else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; }
   }
 
-  function getAllLabGroups() { return { ...defaultTests }; }
+  // Gets default groups + any custom groupings
+  function getAllLabGroups() {
+    const groups = { ...defaultTests };
+    Object.keys(customGroups).forEach(k => {
+      groups[k] = customGroups[k].map(name => allTestsList.find(t => t.name === name) || { name });
+    });
+    return groups;
+  }
+
+  // --- CUSTOM GROUP MODAL FUNCTIONS ---
+  function openGroupModal() {
+    document.getElementById("add-group-modal").classList.remove("hidden");
+    document.getElementById("new-group-name").value = "";
+    tempGroupSelection = [];
+    renderModalList();
+  }
+
+  function closeGroupModal() {
+    document.getElementById("add-group-modal").classList.add("hidden");
+  }
+
+  function renderModalList() {
+    const c = document.getElementById("modal-lab-list");
+    c.innerHTML = "";
+    allTestsList.forEach(t => {
+      const div = document.createElement("div");
+      const isChecked = tempGroupSelection.includes(t.name);
+      div.className = `lab-option ${isChecked ? 'checked' : ''}`;
+      div.innerText = t.name;
+      div.onclick = () => {
+        if(tempGroupSelection.includes(t.name)) tempGroupSelection = tempGroupSelection.filter(x=>x!==t.name);
+        else tempGroupSelection.push(t.name);
+        renderModalList();
+      };
+      c.appendChild(div);
+    });
+  }
+
+  function saveNewGroup() {
+    const name = document.getElementById("new-group-name").value.trim();
+    if (!name || tempGroupSelection.length === 0) return;
+    customGroups[name] = [...tempGroupSelection];
+    activeLabTab = name; // Auto-focus the new tab
+    closeGroupModal();
+    renderLabsPicker();
+  }
 
   function renderLabsPicker() {
     const groups = getAllLabGroups();
@@ -595,7 +670,17 @@
   }
 
   function toggleLabTest(name) { if(selectedTests.includes(name)) selectedTests = selectedTests.filter(x => x !== name); else selectedTests.push(name); renderLabsPicker(); renderViz(); }
-  function toggleAllCurrentTab() { const groups = getAllLabGroups(); const currentTests = groups[activeLabTab] || []; const names = currentTests.map(t => t.name); const allSelected = names.every(n => selectedTests.includes(n)); if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } renderLabsPicker(); renderViz(); }
+  
+  function toggleAllCurrentTab() { 
+    const groups = getAllLabGroups(); 
+    const currentTests = groups[activeLabTab] || []; 
+    const names = currentTests.map(t => t.name); 
+    const allSelected = names.every(n => selectedTests.includes(n)); 
+    if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); 
+    else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } 
+    renderLabsPicker(); 
+    renderViz(); 
+  }
 
   function renderVitalsPicker() {
     const list = document.getElementById("vitalsList"); list.innerHTML = "";
@@ -787,7 +872,6 @@
     const xRange = [0, 800];
     const x = d3.scaleLinear().domain([0, 140]).range(xRange);
     
-    // Updated Math: Includes the 16px comment strip + 1px border.
     let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 16 + 1, 0) + 35;
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
 
@@ -827,7 +911,6 @@
         svg.append("line").attr("class", "grid-line").attr("x1", x(i)).attr("x2", x(i)).attr("y1", 0).attr("y2", lane.height);
       }
 
-      // Pass the complete X scale to the duration drawer for precise click tracking
       if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
       if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", lane);
       if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
@@ -931,7 +1014,6 @@
     const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
     svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
     
-    // Hit targets
     svg.selectAll(".dot-vital").data(vData.data).enter().append("circle")
       .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 4)
       .attr("fill", "transparent").attr("stroke", "transparent")
