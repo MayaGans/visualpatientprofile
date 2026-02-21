@@ -319,7 +319,6 @@
   ];
 
   const allTestsList = Object.values(defaultTests).flat();
-  // Ensure ALT and CK are selected by default so the user can see the toggle demo
   let selectedTests = ["Albumin", "Total Protein", "ALT", "CK", "HGB"];
   let selectedVitals = ["Heart Rate"];
 
@@ -366,7 +365,6 @@
   const clinicalData = {
     meds: [ { name: "Immuno", start: 12, end: 22, amt: 100 }, { name: "Oral", start: 25, end: 110, amt: 25 }, { name: "IV Boost", start: 45, end: 52, amt: 150 } ],
     ae: [ 
-      // OVERLAPPING AES ON DAY 60 to demo multi-record modal resolution
       { start: 60, end: 70, type: "Rash", severity: "Medium" }, 
       { start: 60, end: 80, type: "Nausea", severity: "Low" },
       { start: 28, end: 48, type: "Liver Injury", severity: "High" }, 
@@ -375,14 +373,11 @@
     addv: [ { day: 20, count: 1, details: ["Sample Hemolyzed"] }, { day: 90, count: 1, details: ["Protocol Deviation"] } ]
   };
 
-  // Pre-seed comments using the new data structure (LaneId | RecordName | Day)
+  // Pre-seed comments
+  commentsStore["dosing|Dosing|12"] = [{ id: 6, author: "Dr. Chen", body: "Initial dose administered without immediate infusion reactions.", timestamp: new Date(Date.now() - 86400000) }];
   commentsStore["g/L|Albumin|56"] = [{ id: 1, author: "Dr. Chen", body: "Slight dip observed here. Continuing to monitor.", timestamp: new Date() }];
-  
-  // OVERLAPPING LABS ON DAY 28
   commentsStore["ukat/L|ALT|28"] = [{ id: 4, author: "Dr. Lee", body: "ALT spike noted.", timestamp: new Date(Date.now() - 3600000) }];
   commentsStore["ukat/L|CK|28"] = [{ id: 5, author: "Dr. Martinez", body: "CK also elevated. Monitoring for muscle toxicity.", timestamp: new Date(Date.now() - 7200000) }];
-
-  // OVERLAPPING AEs ON DAY 60
   commentsStore["ae|Rash|60"] = [{ id: 2, author: "Dr. Lee", body: "Patient reported severe localized itching.", timestamp: new Date(Date.now() - 3600000) }];
   commentsStore["ae|Nausea|60"] = [{ id: 3, author: "Dr. Martinez", body: "Started shortly after the recent dose escalation.", timestamp: new Date(Date.now() - 7200000) }];
 
@@ -408,13 +403,10 @@
   }
 
   // --- COMMENT STRIP HELPERS ---
-  
-  // Get all unique days with comments for a given lane
   function getCommentedDaysForLane(lane) {
     const daysMap = new Map();
     Object.keys(commentsStore).forEach(key => {
       const parts = key.split('|');
-      // parts[0] is lane.id, parts[2] is day
       if (parts.length === 3 && parts[0] === lane.id && commentsStore[key].length > 0) {
         const day = parseInt(parts[2]);
         if (!isNaN(day)) daysMap.set(day, true);
@@ -430,13 +422,11 @@
 
     const stripRow = container.append("div").attr("class", "comment-strip-row");
 
-    // Clean blank header area
     stripRow.append("div").attr("class", "comment-strip-header");
 
     const contentDiv = stripRow.append("div").attr("class", "comment-strip-content");
     const svg = contentDiv.append("svg").attr("width", 800).attr("height", STRIP_H);
 
-    // Background — very subtle grey. 
     svg.append("rect")
       .attr("x", 0).attr("y", 0)
       .attr("width", 800).attr("height", STRIP_H)
@@ -449,7 +439,6 @@
         .attr("stroke", "#e5e5ea").attr("stroke-width", 1);
     });
 
-    // Tick marks for commented days
     commentedDays.forEach(c => {
       const cx = xScale(c.day);
 
@@ -457,7 +446,6 @@
         .attr("class", "comment-tick")
         .on("click", function(event) {
           event.stopPropagation();
-          // Opening from the strip passes `null` for the specific item
           openCommentModal(lane, c.day, null);
         });
 
@@ -486,9 +474,7 @@
     else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; }
   }
 
-  function getAllLabGroups() {
-    return { ...defaultTests };
-  }
+  function getAllLabGroups() { return { ...defaultTests }; }
 
   function renderLabsPicker() {
     const groups = getAllLabGroups();
@@ -521,7 +507,6 @@
   function openCommentModal(lane, day, clickedItem) {
     currentCommentTarget = { lane, day, clickedItem };
     
-    // Find what records exist for this lane/day that ALREADY have comments
     const existingItemsWithComments = [];
     Object.keys(commentsStore).forEach(key => {
         const parts = key.split('|');
@@ -538,14 +523,10 @@
     const ctxText = document.getElementById("modal-context-text");
     ctxText.innerHTML = `<span class="ctx-dot"></span>${lane.title} · Day ${day}`;
 
-    // Populate the record target dropdown
     const selectEl = document.getElementById("compose-target-select");
     selectEl.innerHTML = "";
     
-    // Re-render the comments list instantly when the dropdown is toggled
-    selectEl.onchange = () => {
-        renderCommentsList();
-    };
+    selectEl.onchange = () => { renderCommentsList(); };
     
     if (validItems.size === 0) {
         selectEl.innerHTML = `<option value="">No targets</option>`;
@@ -594,7 +575,6 @@
     let allComments = [];
     Object.keys(commentsStore).forEach(key => {
         const parts = key.split('|');
-        // Filter visually down to JUST the actively selected target from the dropdown
         if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day) {
             if (parts[1] === selectedItem) {
                 const itemComments = commentsStore[key].map(c => ({...c, recordName: parts[1]}));
@@ -699,7 +679,9 @@
     const root = d3.select("#viz-root").html("");
     const xRange = [0, 800];
     const x = d3.scaleLinear().domain([0, 140]).range(xRange);
-    let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 1, 0);
+    
+    // MATH FIX: (lane height + 12px strip height + 1px border) + 35px x-axis height
+    let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 12 + 1, 0) + 35;
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
 
     const xContainer = d3.select("#x-axis-container").html("");
@@ -793,7 +775,22 @@
     for(let i=0; i<=140; i++) { let sum = 0; clinicalData.meds.forEach(m => { if(i >= m.start && i <= m.end) sum += m.amt; }); daily.push({ d: i, v: sum }); }
     const max = d3.max(daily, d=>d.v);
     const colorScale = d3.scaleLinear().domain([0, max]).range(["#f5f5f7", "#1d1d1f"]);
-    daily.forEach((day) => { const w = x(Math.min(day.d+1, 140)) - x(day.d); svg.append("rect").attr("x", x(day.d)).attr("y", 4).attr("width", w).attr("height", h-8).attr("fill", colorScale(day.v)).attr("rx", 2); });
+    
+    daily.forEach((day) => { 
+      const w = x(Math.min(day.d+1, 140)) - x(day.d); 
+      svg.append("rect")
+         .attr("x", x(day.d))
+         .attr("y", 4)
+         .attr("width", w)
+         .attr("height", h-8)
+         .attr("fill", colorScale(day.v))
+         .attr("rx", 2)
+         .attr("class", "clickable-point")
+         .on("click", (e) => {
+           e.stopPropagation();
+           openCommentModal(lane, day.d, "Dosing");
+         }); 
+    });
   }
 
   function drawECG(svg, ySvg, x, h, lane) {
