@@ -109,6 +109,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 6px;
       padding: 0 14px;
       height: var(--comment-strip-h);
     }
@@ -120,6 +121,19 @@
       padding: 2px 6px;
       background: rgba(0, 113, 227, 0.1);
       color: var(--accent-blue);
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .lane-warning-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      background: rgba(255, 149, 0, 0.15);
+      color: #d47000;
       border-radius: 8px;
       font-size: 9px;
       font-weight: 700;
@@ -480,6 +494,19 @@
     return count;
   }
 
+  function getLaneWarningCount(lane) {
+    let count = 0;
+    if (lane.type === 'lab') {
+      lane.tests.forEach(tName => {
+        const tData = labTestData[tName];
+        if (tData) {
+          count += tData.data.filter(d => d.clinsig && !d.missing).length;
+        }
+      });
+    }
+    return count;
+  }
+
   // --- COMMENT STRIP RENDERER ---
   function drawCommentStrip(container, lane, xScale) {
     const STRIP_H = 16;
@@ -488,6 +515,13 @@
     const stripRow = container.append("div").attr("class", "comment-strip-row");
     const headerDiv = stripRow.append("div").attr("class", "comment-strip-header");
     
+    const warningCount = getLaneWarningCount(lane);
+    if (warningCount > 0) {
+      headerDiv.append("div")
+        .attr("class", "lane-warning-badge")
+        .html(`<span>⚠</span> ${warningCount}`);
+    }
+
     const count = getLaneCommentCount(lane);
     if (count > 0) {
       headerDiv.append("div")
@@ -793,6 +827,7 @@
         svg.append("line").attr("class", "grid-line").attr("x1", x(i)).attr("x2", x(i)).attr("y1", 0).attr("y2", lane.height);
       }
 
+      // Pass the complete X scale to the duration drawer for precise click tracking
       if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
       if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", lane);
       if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
