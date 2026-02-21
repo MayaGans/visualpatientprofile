@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinical Profile - Interactive Comments</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    :root {
+      --bg-app: #f5f5f7;
+      --bg-panel: #ffffff;
+      --text-main: #1d1d1f;
+      --text-sec: #86868b;
+      --accent-blue: #0071e3;
+      --accent-blue-dim: #eef7ff;
+      --border-light: #d2d2d7;
+      --divider: #e5e5ea;
+      --addv-color: #5856D6;
+      --alert-amber: #FF9500;
+      --alert-text: #1d1d1f;
+    }
+
+    * { box-sizing: border-box; }
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-app); 
+      margin: 0; 
+      padding: 20px;
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .main-container { width: 100%; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+    /* CARD */
+    .card {
+      background: var(--bg-panel);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(10px);
+    }
+    .subject-id { font-weight: 600; font-size: 15px; color: var(--text-main); }
+    .header-hint { font-size: 11px; color: var(--text-sec); }
+
+    /* CONTROLS */
+    .controls-container { background: #fafafa; border-bottom: 1px solid var(--divider); }
+    .panel-row { padding: 14px 18px; border-bottom: 1px solid var(--divider); transition: all 0.2s ease; }
+    .panel-row:last-child { border-bottom: none; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .panel-left { display: flex; align-items: center; gap: 8px; }
+    .panel-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .toggle-icon { font-size: 12px; color: var(--accent-blue); font-weight: 500; cursor: pointer; }
+    .add-group-btn { width: 20px; height: 20px; border-radius: 50%; background: #e5e5ea; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 400; cursor: pointer; transition: background 0.2s; }
+    .add-group-btn:hover { background: #d1d1d6; }
+    .panel-content { margin-top: 12px; display: none; }
+    .panel-content.open { display: block; animation: slideDown 0.2s ease-out; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* TABS & GRIDS */
+    .segmented-control { display: flex; background: #e5e5ea; padding: 2px; border-radius: 8px; margin-bottom: 12px; width: fit-content; max-width: 100%; overflow-x: auto; }
+    .segment-btn { padding: 4px 12px; font-size: 11px; font-weight: 500; color: var(--text-main); border: none; background: transparent; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .segment-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+    .test-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .test-toggle { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; background: #fff; border: 1px solid #d1d1d6; font-size: 11px; font-weight: 500; color: var(--text-main); cursor: pointer; transition: all 0.15s ease; user-select: none; }
+    .test-toggle:hover { border-color: #b0b0b5; }
+    .test-toggle.selected { background: var(--accent-blue); border-color: var(--accent-blue); color: white; box-shadow: 0 1px 4px rgba(0, 113, 227, 0.3); }
+    .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .pill { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--accent-blue-dim); border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; font-size: 11px; color: var(--accent-blue); font-weight: 500; }
+    .pill-remove { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 113, 227, 0.1); font-size: 10px; line-height: 1; }
+
+    /* MODAL GROUPS */
+    .add-group-modal { background: #fff; border: 1px solid #d1d1d6; border-radius: 10px; padding: 12px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .modal-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .modal-input { padding: 6px 10px; border: 1px solid #d1d1d6; border-radius: 6px; font-size: 12px; flex: 1; outline: none; }
+    .lab-select-list { max-height: 150px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 6px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .lab-option { padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+    .lab-option.checked { background: var(--accent-blue-dim); color: var(--accent-blue); font-weight: 500; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 12px; cursor: pointer; border: none; }
+    .btn-cancel { background: #e5e5ea; color: #333; }
+    .btn-save { background: var(--accent-blue); color: white; }
+
+    /* VIZ CONTAINER */
+    .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; }
+    #global-interaction-layer { position: absolute; left: 160px; top: 0; width: 800px; z-index: 50; height: 100%; pointer-events: none; } 
+    #global-cursor-line { position: absolute; top: 0; bottom: 0; width: 1px; background-color: var(--accent-blue); pointer-events: none; z-index: 40; display: none; left: 0; }
+
+    .lane { display: flex; width: max-content; min-width: 100%; border-bottom: 1px solid var(--divider); background: #fff; }
+    .lane-header { width: 160px; flex-shrink: 0; padding: 10px 14px; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; cursor: grab; }
+    .lane-header:active { cursor: grabbing; background: #f0f0f5; }
+    .lane-header.drag-over { background: var(--accent-blue-dim); border-right: 2px solid var(--accent-blue); }
+    .lane-title { font-size: 11px; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px; }
+    .lane-subtitle { font-size: 10px; color: var(--text-sec); }
+    .lane-content { width: 800px; flex-shrink: 0; position: relative; }
+    .lane-y-axis { width: 60px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--divider); position: sticky; right: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    .y-tick-label { font-size: 9px; fill: #999; font-weight: 500; }
+    .x-tick-label { font-size: 10px; fill: #999; font-weight: 500; }
+    .grid-line { stroke: #f0f0f0; stroke-width: 1; pointer-events: none; }
+    
+    /* INTERACTIVE ELEMENTS */
+    .clickable-point { cursor: pointer; transition: all 0.1s; }
+    .clickable-point:hover { stroke: var(--text-main); stroke-width: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+    .has-comment { stroke: var(--text-main); stroke-width: 1.5px; } /* Star styling */
+
+    /* TOOLTIP */
+    .tooltip { 
+      position: absolute; 
+      background: rgba(255, 255, 255, 0.95); 
+      backdrop-filter: blur(20px); 
+      -webkit-backdrop-filter: blur(20px); 
+      border: 1px solid rgba(0,0,0,0.1); 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+      border-radius: 12px; 
+      padding: 0; 
+      pointer-events: none; 
+      z-index: 1000; 
+      min-width: 220px; 
+      display: none; 
+      font-size: 11px; 
+      overflow: hidden; 
+    }
+    .tooltip-header { background: rgba(245, 245, 247, 0.8); padding: 10px 14px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; }
+    .tooltip-section { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .tooltip-section:last-child { border-bottom: none; }
+    .section-title { font-size: 10px; text-transform: uppercase; color: var(--text-sec); font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em; }
+    .tooltip-row { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: flex-start; }
+    .tooltip-val { font-weight: 600; font-family: -apple-system, sans-serif; font-size: 12px; text-align: right; }
+    .tooltip-label { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;}
+    .missing-text { color: #FF3B30; font-style: italic; font-weight: 500; font-size: 10px; letter-spacing: 0.03em; }
+    .alert-row { margin-top: 6px; padding-left: 8px; border-left: 2px solid var(--alert-amber); color: var(--alert-text); display: flex; flex-direction: column; gap: 2px; }
+    .alert-header { font-size: 10px; font-weight: 700; color: var(--alert-amber); display: flex; align-items: center; gap: 4px; }
+    .alert-msg { font-size: 11px; line-height: 1.3; color: var(--text-main); }
+    .addv-detail { display: block; color: var(--text-main); margin-bottom: 2px; }
+
+    /* ─── COMMENT MODAL CSS ─── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000;
+      display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-window {
+      background: var(--bg-panel); border-radius: 16px; width: 100%; max-width: 460px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden; transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease;
+      opacity: 0; display: flex; flex-direction: column; max-height: calc(100vh - 48px);
+    }
+    .modal-backdrop.open .modal-window { transform: translateY(0) scale(1); opacity: 1; }
+    .modal-head { padding: 15px 18px 13px; border-bottom: 1px solid var(--divider); background: #fafafa; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .modal-head-left { display: flex; flex-direction: column; gap: 3px; }
+    .modal-head-title { font-size: 14px; font-weight: 700; color: var(--text-main); letter-spacing: -0.01em; }
+    .modal-context { font-size: 11px; color: var(--text-sec); display: flex; align-items: center; gap: 5px; }
+    .ctx-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-blue); flex-shrink: 0; }
+    .modal-close { width: 26px; height: 26px; border-radius: 50%; background: #e5e5ea; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; transition: background 0.15s; flex-shrink: 0; }
+    .modal-close:hover { background: #d1d1d6; }
+    .compose-area { padding: 14px 18px; border-bottom: 1px solid var(--divider); flex-shrink: 0; }
+    .compose-who { font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .compose-field { width: 100%; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-family: inherit; color: var(--text-main); resize: none; min-height: 76px; outline: none; background: #fafafa; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; line-height: 1.5; }
+    .compose-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); background: #fff; }
+    .compose-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .char-count { font-size: 10px; color: var(--text-sec); }
+    .btn-post { padding: 6px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+    .btn-post:hover { background: #0060c3; }
+    .btn-post:active { transform: scale(0.97); }
+    .btn-post:disabled { background: #d1d1d6; cursor: default; transform: none; }
+    .section-divider { display: flex; align-items: center; gap: 8px; padding: 10px 18px 4px; flex-shrink: 0; }
+    .divider-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-sec); white-space: nowrap; }
+    .divider-line { flex: 1; height: 1px; background: var(--divider); }
+    .comments-list { overflow-y: auto; flex: 1; padding-bottom: 6px; }
+    .comments-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 18px; gap: 6px; color: var(--text-sec); }
+    .empty-label { font-size: 12px; font-weight: 500; }
+    .comment-item { padding: 11px 18px; border-bottom: 1px solid #f2f2f5; animation: fadeSlideIn 0.2s ease-out; }
+    .comment-item:last-child { border-bottom: none; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .comment-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+    .comment-author { font-size: 12px; font-weight: 600; color: var(--text-main); }
+    .comment-time { font-size: 10px; color: var(--text-sec); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+    .comment-body { font-size: 13px; color: var(--text-main); line-height: 1.5; word-break: break-word; }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="card">
+    <div class="card-header">
+      <div class="subject-id">SRP-9001-SUBJ</div>
+      <div class="header-hint">Click any star (★) or dot to add comment</div>
+    </div>
+
+    <div class="controls-container">
+      <div class="panel-row">
+        <div class="panel-header">
+          <div class="panel-left" onclick="togglePicker('labs')">
+            <span class="panel-title">Laboratory Parameters</span>
+          </div>
+          <div class="header-actions">
+            <div class="add-group-btn" onclick="openGroupModal()" title="Create Custom Group">+</div>
+            <span class="toggle-icon" id="toggle-label-labs" onclick="togglePicker('labs')">Edit</span>
+          </div>
+        </div>
+        <div id="add-group-modal" class="add-group-modal hidden">
+          <div class="panel-title" style="margin-bottom:8px">Create New Group</div>
+          <div class="modal-row"><input type="text" id="new-group-name" class="modal-input" placeholder="Group Name"></div>
+          <div class="lab-select-list" id="modal-lab-list"></div>
+          <div class="modal-footer">
+            <button class="btn-sm btn-cancel" onclick="closeGroupModal()">Cancel</button>
+            <button class="btn-sm btn-save" onclick="saveNewGroup()">Save</button>
+          </div>
+        </div>
+        <div id="labs-pills" class="pills-container hidden" style="margin-top:8px"></div>
+        <div id="labs-content" class="panel-content">
+          <div class="segmented-control" id="tabNav"></div>
+          <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <span style="font-size:11px; color:var(--accent-blue); cursor:pointer; font-weight:500;" onclick="toggleAllCurrentTab()">Select All / Clear</span>
+          </div>
+          <div class="test-grid" id="testsList"></div>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel-header" onclick="togglePicker('vitals')">
+          <span class="panel-title">Vital Signs</span>
+          <span class="toggle-icon" id="toggle-label-vitals">Edit</span>
+        </div>
+        <div id="vitals-pills" class="pills-container hidden" style="margin-top:8px"></div>
+        <div id="vitals-content" class="panel-content"><div class="test-grid" id="vitalsList"></div></div>
+      </div>
+    </div>
+
+    <div class="master-scroll-container" id="scroll-container">
+      <div id="global-interaction-layer"><div id="global-cursor-line"></div></div>
+      <div id="viz-root"></div>
+      <div class="lane" style="height: 35px; border-bottom: none;">
+        <div class="lane-header" style="background: white; border-right: 1px solid #e5e5ea;"></div>
+        <div class="lane-content" id="x-axis-container" style="height: 35px;"></div>
+        <div class="lane-y-axis" style="border-left: 1px solid #e5e5ea;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<div class="modal-backdrop" id="comment-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal-window" id="comment-modal">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-head-title">Comments</div>
+        <div class="modal-context" id="modal-context-text">
+          <span class="ctx-dot"></span>
+          Data Point Details
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeCommentModal()">✕</button>
+    </div>
+
+    <div class="compose-area">
+      <div class="compose-who">Dr. Martinez</div>
+      <textarea class="compose-field" id="compose-field" placeholder="Add a comment…" maxlength="500" oninput="onInput()"></textarea>
+      <div class="compose-footer">
+        <span class="char-count" id="char-count">0 / 500</span>
+        <button class="btn-post" id="post-btn" onclick="postComment()" disabled>Post</button>
+      </div>
+    </div>
+
+    <div class="section-divider">
+      <span class="divider-label" id="comment-count-label">0 comments</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="comments-list" id="comments-list"></div>
+  </div>
+</div>
+
+<script>
+  // --- 1. DATA DEFINITIONS ---
+  const defaultTests = {
+    Chemistry: [ { name: "Albumin", unit: "g/L" }, { name: "Total Protein", unit: "g/L" } ],
+    Enzymes: [ { name: "ALT", unit: "ukat/L" }, { name: "CK", unit: "ukat/L" }, { name: "AST", unit: "ukat/L" } ],
+    Hematology: [ { name: "HGB", unit: "g/dL" }, { name: "HCT", unit: "%" } ],
+    Kidney: [ { name: "Creatinine", unit: "umol/L" } ]
+  };
+  const vitalOptions = [ { name: "Heart Rate", unit: "bpm", color: "#FF2D55" }, { name: "Temperature", unit: "°C", color: "#FF9500" }, { name: "Systolic BP", unit: "mmHg", color: "#AF52DE" }, { name: "Diastolic BP", unit: "mmHg", color: "#5856D6" }, { name: "SpO2", unit: "%", color: "#007AFF" }, { name: "Resp Rate", unit: "/min", color: "#34C759" } ];
+
+  // State
+  let customGroups = {}; 
+  const allTestsList = Object.values(defaultTests).flat();
+  let selectedTests = ["Albumin", "Total Protein", "ALT", "CK", "HGB"];
+  let selectedVitals = ["Heart Rate"];
+  
+  // GLOBAL COMMENTS STORE: { "laneId-day": [ {id, author, body, timestamp} ] }
+  let commentsStore = {};
+  let currentCommentTarget = null; // { laneId: string, day: number, title: string }
+
+  // Mock Data
+  const labTestData = {};
+  allTestsList.forEach(t => {
+    const data = [];
+    let base = t.unit === "g/L" ? 40 : t.unit === "ukat/L" ? 0.5 : 10;
+    for(let d=0; d<=140; d+=14) {
+      let val = base + (Math.random() * base * 0.2) - (base * 0.1); 
+      if(val < 0) val = 0.1;
+      const pt = { d: d, v: parseFloat(val.toFixed(2)) };
+      if (Math.random() < 0.15 && !t.name.includes("Albumin")) { 
+          pt.clinsig = true;
+          pt.comment = "Critical High > 3x ULN";
+      }
+      data.push(pt);
+    }
+    labTestData[t.name] = { unit: t.unit, data: data };
+  });
+  const vitalTestData = {};
+  vitalOptions.forEach(v => {
+    const data = [];
+    let base = v.name === "Heart Rate" ? 75 : v.name === "Temperature" ? 36.6 : 98;
+    for(let d=0; d<=140; d+=1) { let noise = (Math.random() - 0.5) * (base * 0.1); data.push({ d: d, v: parseFloat((base + noise).toFixed(1)) }); }
+    vitalTestData[v.name] = { unit: v.unit, color: v.color, data: data };
+  });
+
+  const albData = labTestData["Albumin"].data;
+  const missingPt = albData.find(p => p.d === 84); if(missingPt) { missingPt.missing = true; missingPt.clinsig = false; }
+  const ecgData = []; { let val = 410; for(let d=0; d<=140; d+=7) { val = val + (Math.random()*20 - 10); ecgData.push({ d: d, v: Math.round(val) }); } }
+  
+  const severityVector = ["Low", "Medium", "High"];
+  const clinicalData = {
+    meds: [ { name: "Immuno", start: 12, end: 22, amt: 100 }, { name: "Oral", start: 25, end: 110, amt: 25 }, { name: "IV Boost", start: 45, end: 52, amt: 150 }, { name: "IV Maint", start: 115, end: 125, amt: 80 } ],
+    ae: [ { start: 28, end: 48, type: "Liver Injury", severity: "High" }, { start: 40, end: 75, type: "Fatigue", severity: "Low" }, { start: 60, end: 70, type: "Rash", severity: "Medium" }, { start: 110, end: 130, type: "Headache", severity: "Low" }, { start: 15, end: 20, type: "Fever", severity: "High" }, { start: 85, end: 85, type: "Injection Site Reaction", severity: "Low" } ],
+    addv: [ { day: 20, count: 1, details: ["Sample Hemolyzed"] }, { day: 56, count: 2, details: ["Temp Excursion", "Lab Kit Expired"] }, { day: 90, count: 1, details: ["Protocol Deviation"] } ]
+  };
+
+  // Pre-seed a comment on Albumin Day 84 (the missing one)
+  const seedKey = "Albumin-84";
+  commentsStore[seedKey] = [{ id: 1, author: "Dr. Chen", body: "Sample hemolyzed. Requested retest.", timestamp: new Date() }];
+
+  // Helpers
+  function getLineColor(index) { const p = ["#1d1d1f", "#0071e3", "#ff3b30", "#34c759", "#ff9500", "#af52de"]; return p[index % p.length]; }
+  function createOrdinalColorScale(vector) { if(!vector || vector.length===0) return ()=>"#9e9e9e"; const s = d3.scaleLinear().domain([0, (vector.length-1)/2, vector.length-1]).range(["#34C759", "#FFD60A", "#FF3B30"]).interpolate(d3.interpolateRgb); return (v) => { const idx = vector.indexOf(v); return idx===-1 ? "#9e9e9e" : s(idx); }; }
+  const severityScaler = createOrdinalColorScale(severityVector);
+  function calculateRequiredHeight(data) { if (!data || data.length === 0) return 55; const sorted = [...data].sort((a, b) => a.start - b.start); const rows = []; sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { rows[i] = d.end; placed = true; break; } } if(!placed) rows.push(d.end); }); return Math.max(20 + (rows.length * 18), 55); }
+
+  // UI
+  let activeLabTab = "Chemistry"; let panelsState = { labs: true, vitals: false }; let tempGroupSelection = [];
+  function init() { renderLabsPicker(); renderVitalsPicker(); renderViz(); }
+  function togglePicker(panelName) { panelsState[panelName] = !panelsState[panelName]; updatePanelUI(panelName); }
+  function updatePanelUI(panelName) { const content = document.getElementById(`${panelName}-content`); const pills = document.getElementById(`${panelName}-pills`); const label = document.getElementById(`toggle-label-${panelName}`); if(panelsState[panelName]) { content.classList.add("open"); pills.classList.add("hidden"); label.innerText = "Done"; label.style.fontWeight = "600"; } else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; } }
+  function getAllLabGroups() { const groups = { ...defaultTests }; Object.keys(customGroups).forEach(k => { groups[k] = customGroups[k].map(name => { return allTestsList.find(t => t.name === name) || { name: name }; }); }); return groups; }
+  function renderLabsPicker() { const groups = getAllLabGroups(); const nav = document.getElementById("tabNav"); nav.innerHTML = ""; Object.keys(groups).forEach(cat => { const btn = document.createElement("button"); btn.className = `segment-btn ${activeLabTab === cat ? 'active' : ''}`; btn.innerText = cat; btn.onclick = (e) => { e.stopPropagation(); activeLabTab = cat; renderLabsPicker(); }; nav.appendChild(btn); }); const list = document.getElementById("testsList"); list.innerHTML = ""; const currentTests = groups[activeLabTab] || []; currentTests.forEach(t => { const isSelected = selectedTests.includes(t.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${t.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleLabTest(t.name); }; list.appendChild(btn); }); const pillContainer = document.getElementById("labs-pills"); pillContainer.innerHTML = ""; if (selectedTests.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No labs selected</span>`; else { selectedTests.forEach(t => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${t}<div class="pill-remove" onclick="event.stopPropagation(); toggleLabTest('${t}')">×</div>`; pillContainer.appendChild(pill); }); } updatePanelUI('labs'); }
+  function toggleLabTest(name) { if(selectedTests.includes(name)) selectedTests = selectedTests.filter(x => x !== name); else selectedTests.push(name); renderLabsPicker(); renderViz(); }
+  function toggleAllCurrentTab() { const groups = getAllLabGroups(); const currentTests = groups[activeLabTab] || []; const names = currentTests.map(t => t.name); const allSelected = names.every(n => selectedTests.includes(n)); if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } renderLabsPicker(); renderViz(); }
+  function renderVitalsPicker() { const list = document.getElementById("vitalsList"); list.innerHTML = ""; vitalOptions.forEach(v => { const isSelected = selectedVitals.includes(v.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${v.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleVital(v.name); }; list.appendChild(btn); }); const pillContainer = document.getElementById("vitals-pills"); pillContainer.innerHTML = ""; if (selectedVitals.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No vitals selected</span>`; else { selectedVitals.forEach(v => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${v}<div class="pill-remove" onclick="event.stopPropagation(); toggleVital('${v}')">×</div>`; pillContainer.appendChild(pill); }); } updatePanelUI('vitals'); }
+  function toggleVital(name) { if(selectedVitals.includes(name)) selectedVitals = selectedVitals.filter(x => x !== name); else selectedVitals.push(name); renderVitalsPicker(); renderViz(); }
+  function openGroupModal() { document.getElementById("add-group-modal").classList.remove("hidden"); document.getElementById("new-group-name").value = ""; tempGroupSelection = []; renderModalList(); }
+  function closeGroupModal() { document.getElementById("add-group-modal").classList.add("hidden"); }
+  function renderModalList() { const c = document.getElementById("modal-lab-list"); c.innerHTML = ""; allTestsList.forEach(t => { const div = document.createElement("div"); const isChecked = tempGroupSelection.includes(t.name); div.className = `lab-option ${isChecked ? 'checked' : ''}`; div.innerText = t.name; div.onclick = () => { if(tempGroupSelection.includes(t.name)) tempGroupSelection = tempGroupSelection.filter(x=>x!==t.name); else tempGroupSelection.push(t.name); renderModalList(); }; c.appendChild(div); }); }
+  function saveNewGroup() { const name = document.getElementById("new-group-name").value.trim(); if (!name || tempGroupSelection.length === 0) return; customGroups[name] = [...tempGroupSelection]; activeLabTab = name; closeGroupModal(); renderLabsPicker(); }
+
+  // --- COMMENT MODAL LOGIC ---
+  function hasComments(laneId, day) {
+    const key = `${laneId}-${day}`;
+    return commentsStore[key] && commentsStore[key].length > 0;
+  }
+
+  function openCommentModal(laneId, day, title) {
+    currentCommentTarget = { laneId, day, title };
+    const modal = document.getElementById("comment-backdrop");
+    const ctxText = document.getElementById("modal-context-text");
+    ctxText.innerHTML = `<span class="ctx-dot"></span>${title} · Day ${day}`;
+    
+    // Clear compose
+    const field = document.getElementById("compose-field");
+    field.value = "";
+    onInput();
+    
+    renderCommentsList();
+    modal.classList.add("open");
+    setTimeout(() => field.focus(), 230);
+  }
+
+  function closeCommentModal() {
+    document.getElementById("comment-backdrop").classList.remove("open");
+    currentCommentTarget = null;
+    renderViz(); // Re-render to update stars
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target === document.getElementById("comment-backdrop")) closeCommentModal();
+  }
+
+  function renderCommentsList() {
+    if(!currentCommentTarget) return;
+    const key = `${currentCommentTarget.laneId}-${currentCommentTarget.day}`;
+    const list = document.getElementById("comments-list");
+    const label = document.getElementById("comment-count-label");
+    const stored = commentsStore[key] || [];
+    
+    label.textContent = `${stored.length} comment${stored.length !== 1 ? 's' : ''}`;
+
+    if(stored.length === 0) {
+      list.innerHTML = `<div class="comments-empty"><div class="empty-label">No comments yet</div></div>`;
+      return;
+    }
+
+    const sorted = [...stored].sort((a,b) => b.timestamp - a.timestamp); // Newest first
+    list.innerHTML = sorted.map(c => `
+      <div class="comment-item">
+        <div class="comment-header">
+          <span class="comment-author">${c.author}</span>
+          <span class="comment-time">${formatTimestamp(c.timestamp)}</span>
+        </div>
+        <div class="comment-body">${c.body}</div>
+      </div>
+    `).join("");
+  }
+
+  function postComment() {
+    if(!currentCommentTarget) return;
+    const field = document.getElementById("compose-field");
+    const body = field.value.trim();
+    if(!body) return;
+
+    const key = `${currentCommentTarget.laneId}-${currentCommentTarget.day}`;
+    if(!commentsStore[key]) commentsStore[key] = [];
+    
+    commentsStore[key].push({
+      id: Date.now(),
+      author: "Dr. Martinez",
+      body: body,
+      timestamp: new Date()
+    });
+
+    field.value = "";
+    onInput();
+    renderCommentsList();
+  }
+
+  function onInput() {
+    const field = document.getElementById("compose-field");
+    const btn = document.getElementById("post-btn");
+    const count = document.getElementById("char-count");
+    count.textContent = `${field.value.length} / 500`;
+    btn.disabled = field.value.trim().length === 0;
+  }
+
+  function formatTimestamp(d) {
+     if(typeof d === 'string') d = new Date(d);
+     const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+     return `${d.getDate()} ${m[d.getMonth()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  // --- LAYOUT ---
+  let baseLayout = [
+    { id: "dosing", type: "dosing", title: "Dosing" },
+    { id: "conmeds", type: "conmeds", title: "ConMeds" }, 
+    { id: "ecg", type: "ecg", title: "ECG" },
+    { id: "ae", type: "ae", title: "Adverse Events" },
+    { id: "addv", type: "addv", title: "ADDV" }
+  ];
+  let laneOrder = ["dosing", "conmeds", "ecg", "ae", "addv"]; 
+
+  function getLayout() {
+    const grouped = {}; selectedTests.forEach(tName => { const t = allTestsList.find(x => x.name === tName); if(!t) return; if(!grouped[t.unit]) grouped[t.unit] = []; grouped[t.unit].push(tName); }); Object.keys(grouped).forEach(u => { if(!laneOrder.includes(u)) laneOrder.push(u); });
+    selectedVitals.forEach(v => { const id = `vital-${v}`; if(!laneOrder.includes(id)) { const ecgIdx = laneOrder.indexOf("ecg"); if(ecgIdx > -1) laneOrder.splice(ecgIdx + 1, 0, id); else laneOrder.push(id); } });
+    const finalLayout = [];
+    laneOrder.forEach(id => {
+      const base = baseLayout.find(b => b.id === id);
+      if(base) {
+        let h = 50;
+        if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.meds);
+        else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
+        else if (base.type === 'dosing') h = 35;
+        else if (base.type === 'ecg') h = 60;
+        else if (base.type === 'addv') h = 50; 
+        finalLayout.push({ ...base, height: h }); return;
+      }
+      if(grouped[id]) { finalLayout.push({ id: id, type: 'lab', title: id, tests: grouped[id], height: 70 }); return; }
+      if(id.startsWith("vital-")) { const vName = id.replace("vital-", ""); if(selectedVitals.includes(vName)) { finalLayout.push({ id: id, type: 'vital', title: vName, vitalName: vName, height: 60 }); } }
+    });
+    return finalLayout;
+  }
+
+  // --- VIZ ---
+  function renderViz() {
+    const layout = getLayout();
+    const root = d3.select("#viz-root").html("");
+    const xRange = [0, 800];
+    const x = d3.scaleLinear().domain([0, 140]).range(xRange);
+    let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 1, 0); 
+    d3.select("#global-interaction-layer").style("height", totalHeight + "px");
+    const xContainer = d3.select("#x-axis-container").html("");
+    const xSvg = xContainer.append("svg").attr("width", 800).attr("height", 35);
+    [0, 28, 56, 84, 112, 140].forEach(t => { xSvg.append("text").attr("x", x(t)).attr("y", 22).attr("text-anchor", "middle").attr("class", "x-tick-label").text(t); });
+
+    layout.forEach((lane, index) => {
+      const laneDiv = root.append("div").attr("class", "lane").attr("data-id", lane.id);
+      const header = laneDiv.append("div").attr("class", "lane-header").attr("draggable", "true");
+      header.node().addEventListener('dragstart', (e) => handleDragStart(e, index)); header.node().addEventListener('dragover', (e) => handleDragOver(e)); header.node().addEventListener('dragleave', (e) => handleDragLeave(e)); header.node().addEventListener('drop', (e) => handleDrop(e, index));
+      header.append("div").attr("class", "lane-title").text(lane.title);
+      let sub = "";
+      if(lane.type === 'lab') sub = lane.tests.join(", ");
+      else if(lane.type === 'dosing') sub = "Heatmap";
+      else if(lane.type === 'conmeds') sub = "Durations";
+      else if(lane.type === 'ecg') sub = "QTcF";
+      else if(lane.type === 'addv') sub = "Deviations";
+      else if(lane.type === 'vital') sub = vitalTestData[lane.vitalName].unit;
+      else sub = "Severity";
+      header.append("div").attr("class", "lane-subtitle").text(sub);
+
+      const content = laneDiv.append("div").attr("class", "lane-content").style("height", lane.height + "px");
+      const svg = content.append("svg").attr("width", 800).attr("height", lane.height);
+      const yAxis = laneDiv.append("div").attr("class", "lane-y-axis");
+      const ySvg = yAxis.append("svg").attr("width", 60).attr("height", lane.height);
+      for(let i=0; i<=140; i+=28) svg.append("line").attr("class", "grid-line").attr("x1",x(i)).attr("x2",x(i)).attr("y1",0).attr("y2",lane.height);
+      
+      if(lane.type === 'dosing') drawDosing(svg, x, lane.height);
+      if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", "conmeds");
+      if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height);
+      if(lane.type === 'addv') drawADDV(svg, x, lane.height);
+      if(lane.type === 'ae') {
+          drawDurationLane(svg, x, lane.height, clinicalData.ae, (d) => severityScaler(d.severity), "ae");
+          const lg = ySvg.append("g").attr("transform", "translate(6, 10)");
+          severityVector.forEach((label, i) => { const row = lg.append("g").attr("transform", `translate(0, ${i * 14})`); row.append("rect").attr("width", 8).attr("height", 8).attr("rx", 2).attr("fill", severityScaler(label)); row.append("text").attr("x", 12).attr("y", 7).text(label).attr("class", "y-tick-label").style("fill", "var(--text-main)"); });
+      }
+      if(lane.type === 'lab') drawLabs(svg, ySvg, x, lane);
+      if(lane.type === 'vital') drawVitals(svg, ySvg, x, lane);
+    });
+    setupGlobalTooltip(x, layout);
+  }
+
+  function drawADDV(svg, x, h) {
+    const centerY = h / 2;
+    clinicalData.addv.forEach(d => {
+        const hasComm = hasComments("addv", d.day);
+        const g = svg.append("g")
+           .attr("class", "clickable-point")
+           .on("click", (e) => { e.stopPropagation(); openCommentModal("addv", d.day, "Deviation"); });
+        
+        g.append("circle")
+           .attr("cx", x(d.day)).attr("cy", centerY).attr("r", 10)
+           .attr("fill", "var(--addv-color)")
+           .attr("class", "addv-circle");
+        
+        // Star if commented
+        if(hasComm) {
+            g.append("text").attr("x", x(d.day)).attr("y", centerY + 4).attr("text-anchor", "middle").text("★").attr("fill", "white").style("font-size","14px").style("pointer-events","none");
+        } else {
+            g.append("text").attr("x", x(d.day)).attr("y", centerY + 4).attr("text-anchor", "middle").attr("class", "addv-text").text(d.count);
+        }
+    });
+  }
+
+  function drawDurationLane(svg, x, h, dataArray, colorConfig, laneId) {
+    const sorted = [...dataArray].sort((a, b) => a.start - b.start);
+    const rows = []; 
+    sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { d.rowIndex = i; rows[i] = d.end; placed = true; break; } } if(!placed) { d.rowIndex = rows.length; rows.push(d.end); } });
+    const barHeight = 12, barGap = 6;
+    sorted.forEach(d => {
+        const y = 10 + (d.rowIndex * (barHeight + barGap));
+        let fill = "#ccc"; if (typeof colorConfig === 'string') fill = colorConfig; if (typeof colorConfig === 'function') fill = colorConfig(d);
+        const width = Math.max(x(d.end) - x(d.start), 4);
+        
+        const g = svg.append("g").attr("class", "clickable-point")
+           .on("click", (e) => { e.stopPropagation(); openCommentModal(laneId, d.start, d.name || d.type); });
+
+        const rect = g.append("rect").attr("x", x(d.start)).attr("width", width).attr("y", y).attr("height", barHeight).attr("rx", 3).attr("fill", fill).attr("stroke", "white").attr("stroke-width", 1);
+        
+        // Check for comment on start day (simplified keying)
+        if(hasComments(laneId, d.start)) {
+             rect.attr("stroke", "#1d1d1f").attr("stroke-width", 2);
+             g.append("text").attr("x", x(d.start)-8).attr("y", y+10).text("★").attr("fill", "#1d1d1f").style("font-size", "10px");
+        }
+
+        if (width > 30) g.append("text").attr("x", x(d.start) + 4).attr("y", y + 9).attr("font-size", "9px").attr("fill", "white").style("pointer-events", "none").style("font-weight", "600").text(d.name || d.type); 
+    });
+  }
+  
+  function drawDosing(svg, x, h) { 
+    // Dosing not clickable for comments in this simplified demo
+    const daily = []; for(let i=0; i<=140; i++) { let sum = 0; clinicalData.meds.forEach(m => { if(i >= m.start && i <= m.end) sum += m.amt; }); daily.push({ d: i, v: sum }); } 
+    const max = d3.max(daily, d=>d.v); 
+    const colorScale = d3.scaleLinear().domain([0, max]).range(["#f5f5f7", "#1d1d1f"]); 
+    daily.forEach((day, i) => { 
+        const w = x(Math.min(day.d+1, 140)) - x(day.d); 
+        svg.append("rect").attr("x", x(day.d)).attr("y", 4).attr("width", w).attr("height", h-8).attr("fill", colorScale(day.v)).attr("rx", 2); 
+    }); 
+  }
+  
+  function drawECG(svg, ySvg, x, h) { 
+      const color = getLineColor(0); 
+      const min = d3.min(ecgData, d=>d.v); const max = d3.max(ecgData, d=>d.v); 
+      const y = d3.scaleLinear().domain([min-20, max+20]).range([h-6, 6]); 
+      const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX); 
+      svg.append("path").datum(ecgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none"); 
+      
+      // Dots are clickable
+      svg.selectAll(".dot-ecg").data(ecgData).enter().append("path")
+         .attr("d", d => hasComments("ecg", d.d) ? d3.symbol().type(d3.symbolStar).size(64)() : d3.symbol().type(d3.symbolCircle).size(36)())
+         .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
+         .attr("fill", d => hasComments("ecg", d.d) ? color : "#fff")
+         .attr("stroke", color).attr("stroke-width", 1.5)
+         .attr("class", d => "clickable-point " + (hasComments("ecg", d.d) ? "has-comment" : ""))
+         .on("click", (e, d) => { e.stopPropagation(); openCommentModal("ecg", d.d, "QTcF"); });
+
+      [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); }); 
+      ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", h/2 + 10).text("msec").style("opacity", 0.5); 
+  }
+  
+  function drawVitals(svg, ySvg, x, lane) { 
+      const vData = vitalTestData[lane.vitalName]; 
+      const min = d3.min(vData.data, d=>d.v); const max = d3.max(vData.data, d=>d.v); 
+      const y = d3.scaleLinear().domain([min - (min*0.05), max + (max*0.05)]).range([lane.height-6, 6]); 
+      const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear); 
+      svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+      
+      // Hidden clickable circles (or visible if commented)
+      svg.selectAll(".dot-vital").data(vData.data).enter().append("path")
+         .attr("d", d => hasComments(lane.vitalName, d.d) ? d3.symbol().type(d3.symbolStar).size(64)() : d3.symbol().type(d3.symbolCircle).size(36)())
+         .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
+         .attr("fill", d => hasComments(lane.vitalName, d.d) ? vData.color : "transparent") // Invisible hit target unless starred
+         .attr("stroke", d => hasComments(lane.vitalName, d.d) ? vData.color : "transparent")
+         .attr("class", "clickable-point")
+         .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane.vitalName, d.d, lane.vitalName); });
+
+      [Math.floor(min), Math.ceil(max)].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); }); 
+  }
+  
+  function drawLabs(svg, ySvg, x, lane) { 
+      const h = lane.height; let globalMin = Infinity; let globalMax = -Infinity; 
+      lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); }); 
+      if (globalMin === Infinity) return; 
+      const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-6, 6]); 
+      
+      lane.tests.forEach((tName, index) => { 
+          const tData = labTestData[tName]; if(!tData) return; const color = getLineColor(index); 
+          const line = d3.line().defined(d => !d.missing).x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX); 
+          svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none"); 
+          
+          tData.data.forEach((d, i) => { if (d.missing && i > 0 && i < tData.data.length - 1) { const prev = tData.data[i-1]; const next = tData.data[i+1]; if (!prev.missing && !next.missing) svg.append("line").attr("x1", x(prev.d)).attr("y1", y(prev.v)).attr("x2", x(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4"); } }); 
+          
+          svg.selectAll(`.dot-${tName}`).data(tData.data.filter(d => !d.missing)).enter().append("path")
+             .attr("d", d => {
+                 // Star if commented OR clinsig
+                 if(hasComments(tName, d.d)) return d3.symbol().type(d3.symbolStar).size(80)();
+                 return d.clinsig ? d3.symbol().type(d3.symbolStar).size(64)() : d3.symbol().type(d3.symbolCircle).size(36)();
+             })
+             .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
+             .attr("fill", d => (d.clinsig || hasComments(tName, d.d)) ? color : "#fff")
+             .attr("stroke", color).attr("stroke-width", 1.5)
+             .attr("class", "clickable-point")
+             .on("click", (e, d) => { e.stopPropagation(); openCommentModal(tName, d.d, tName); });
+      }); 
+      [globalMin, globalMax].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v.toFixed(1)); }); 
+  }
+
+  let dragSrcIndex = null; function handleDragStart(e, index) { dragSrcIndex = index; e.dataTransfer.effectAllowed = 'move'; } function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function handleDrop(e, targetIndex) { e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if(dragSrcIndex!==null && dragSrcIndex!==targetIndex) { const c = getLayout(); const sId = c[dragSrcIndex].id; const tId = c[targetIndex].id; const sP = laneOrder.indexOf(sId); const tP = laneOrder.indexOf(tId); if (sP>-1 && tP>-1) { laneOrder.splice(sP, 1); laneOrder.splice(tP, 0, sId); } renderViz(); } dragSrcIndex = null; }
+
+  // --- TOOLTIP (Fixed for correct X-alignment) ---
+  function setupGlobalTooltip(xScale, layout) {
+    const container = d3.select("#scroll-container");
+    const cursor = d3.select("#global-cursor-line");
+    const tooltip = d3.select("#tooltip");
+
+    container.on("mousemove", (event) => {
+      // Don't show tooltip if modal is open
+      if(document.getElementById("comment-backdrop").classList.contains("open")) return;
+
+      const [mx] = d3.pointer(event, container.node()); 
+      // Offset for lane headers (160px)
+      const graphX = mx - 160; 
+      if(graphX < 0) { cursor.style("display","none"); tooltip.style("display","none"); return; }
+
+      const day = Math.round(xScale.invert(graphX));
+      
+      if(day < 0 || day > 140) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
+      
+      // FIXED: Use graphX (visual graph coordinate) instead of raw mx for internal cursor position
+      cursor.style("display", "block").style("left", graphX + "px"); 
+      
+      // --- CONTENT GENERATION START ---
+      let html = `<div class="tooltip-header">Day ${day}</div>`, hasContent = false;
+
+      // Add ADDV
+      const dev = clinicalData.addv.find(d => d.day === day);
+      if(dev) {
+          let detHtml = ""; dev.details.forEach(d => detHtml += `<span class="addv-detail">• ${d}</span>`);
+          html += `<div class="tooltip-section"><div class="section-title">Deviations (${dev.count})</div>${detHtml}</div>`;
+          hasContent = true;
+      }
+
+      // Add Dosing
+      let dose = 0; clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) dose+=m.amt; });
+      if(dose>0) { html+=`<div class="tooltip-section"><div class="section-title">Total Dose</div><div class="tooltip-row"><span style="color:#86868b">Sum</span><span class="tooltip-val">${dose} mg</span></div></div>`; hasContent=true; }
+
+      // Add Meds
+      let medHtml = ""; clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) medHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:#9e9e9e"></div>${m.name}</div><span class="tooltip-val">${m.amt} mg</span></div>`; });
+      if(medHtml) { html+=`<div class="tooltip-section"><div class="section-title">Medications</div>${medHtml}</div>`; hasContent=true; }
+
+      // Add ECG
+      const ecgPt = ecgData.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+      if(Math.abs(ecgPt.d-day)<7) { html+=`<div class="tooltip-section"><div class="section-title">ECG</div><div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${getLineColor(0)}"></div>QTcF</div><span class="tooltip-val">${ecgPt.v} ms</span></div></div>`; hasContent=true; }
+
+      // Add Vitals
+      let vitalHtml = "";
+      selectedVitals.forEach(v => {
+          const d = vitalTestData[v];
+          const pt = d.data.find(p => p.d === day);
+          if(pt) vitalHtml += `<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${d.color}"></div>${v}</div><span class="tooltip-val">${pt.v} <small>${d.unit}</small></span></div>`;
+      });
+      if(vitalHtml) { html+=`<div class="tooltip-section"><div class="section-title">Vitals</div>${vitalHtml}</div>`; hasContent=true; }
+
+      // Add Labs
+      let labHtml = "";
+      layout.forEach(lane => {
+        if(lane.type === 'lab') {
+           lane.tests.forEach((tName, idx) => {
+              const data = labTestData[tName]; const color = getLineColor(idx);
+              const pt = data.data.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+              if(Math.abs(pt.d-day)<10) {
+                 if(pt.missing) labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="missing-text">MISSING</span></div>`;
+                 else {
+                     labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="tooltip-val">${pt.v} <small>${data.unit}</small></span></div>`;
+                     if(pt.clinsig) {
+                         labHtml += `<div class="alert-row"><div class="alert-header"><span>★</span> Alert</div><div class="alert-msg">${pt.comment || "Significant"}</div></div>`;
+                     }
+                 }
+              }
+           });
+        }
+      });
+      if(labHtml) { html+=`<div class="tooltip-section"><div class="section-title">Labs</div>${labHtml}</div>`; hasContent=true; }
+
+      // Add Safety
+      let aeHtml = ""; clinicalData.ae.forEach(a => { if(day>=a.start && day<=a.end) { const col = severityScaler(a.severity); aeHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${col}"></div>${a.type}</div><span class="tooltip-val" style="font-weight:400; font-size:10px">${a.severity}</span></div>`; } });
+      if(aeHtml) { html+=`<div class="tooltip-section"><div class="section-title">Safety</div>${aeHtml}</div>`; hasContent=true; }
+      // --- CONTENT GENERATION END ---
+
+      if(hasContent) { 
+        tooltip.html(html).style("display", "block"); 
+        const node = tooltip.node();
+        const tooltipRect = node.getBoundingClientRect();
+        const padding = 15; const windowWidth = window.innerWidth; const windowHeight = window.innerHeight;
+        let left = event.pageX + padding; let top = event.pageY + padding;
+        if (event.clientX + padding + tooltipRect.width > windowWidth) left = event.pageX - padding - tooltipRect.width;
+        if (event.clientY + padding + tooltipRect.height > windowHeight) top = event.pageY - padding - tooltipRect.height;
+        tooltip.style("left", left + "px").style("top", top + "px");
+      } else { 
+        tooltip.style("display", "none"); 
+      }
+    }).on("mouseleave", () => { cursor.style("display", "none"); tooltip.style("display", "none"); });
+  }
+
+  init();
+</script>
+</body>
+</html>
