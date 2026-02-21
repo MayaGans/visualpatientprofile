@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinical Profile - Interactive Comments</title>
+  <title>Clinical Profile - Comment Strip & Resolution</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
     :root {
@@ -18,6 +18,8 @@
       --addv-color: #5856D6;
       --alert-amber: #FF9500;
       --alert-text: #1d1d1f;
+      --comment-strip-h: 12px;
+      --comment-tick-color: #0071e3;
     }
 
     * { box-sizing: border-box; }
@@ -33,7 +35,6 @@
 
     .main-container { width: 100%; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
-    /* CARD */
     .card {
       background: var(--bg-panel);
       border-radius: 12px;
@@ -55,7 +56,6 @@
     .subject-id { font-weight: 600; font-size: 15px; color: var(--text-main); }
     .header-hint { font-size: 11px; color: var(--text-sec); }
 
-    /* CONTROLS */
     .controls-container { background: #fafafa; border-bottom: 1px solid var(--divider); }
     .panel-row { padding: 14px 18px; border-bottom: 1px solid var(--divider); transition: all 0.2s ease; }
     .panel-row:last-child { border-bottom: none; }
@@ -70,7 +70,6 @@
     .panel-content.open { display: block; animation: slideDown 0.2s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* TABS & GRIDS */
     .segmented-control { display: flex; background: #e5e5ea; padding: 2px; border-radius: 8px; margin-bottom: 12px; width: fit-content; max-width: 100%; overflow-x: auto; }
     .segment-btn { padding: 4px 12px; font-size: 11px; font-weight: 500; color: var(--text-main); border: none; background: transparent; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
     .segment-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
@@ -82,24 +81,13 @@
     .pill { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--accent-blue-dim); border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; font-size: 11px; color: var(--accent-blue); font-weight: 500; }
     .pill-remove { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 113, 227, 0.1); font-size: 10px; line-height: 1; }
 
-    /* MODAL GROUPS */
-    .add-group-modal { background: #fff; border: 1px solid #d1d1d6; border-radius: 10px; padding: 12px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .modal-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .modal-input { padding: 6px 10px; border: 1px solid #d1d1d6; border-radius: 6px; font-size: 12px; flex: 1; outline: none; }
-    .lab-select-list { max-height: 150px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 6px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-    .lab-option { padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
-    .lab-option.checked { background: var(--accent-blue-dim); color: var(--accent-blue); font-weight: 500; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-    .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 12px; cursor: pointer; border: none; }
-    .btn-cancel { background: #e5e5ea; color: #333; }
-    .btn-save { background: var(--accent-blue); color: white; }
-
-    /* VIZ CONTAINER */
     .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; }
     #global-interaction-layer { position: absolute; left: 160px; top: 0; width: 800px; z-index: 50; height: 100%; pointer-events: none; } 
     #global-cursor-line { position: absolute; top: 0; bottom: 0; width: 1px; background-color: var(--accent-blue); pointer-events: none; z-index: 40; display: none; left: 0; }
 
-    .lane { display: flex; width: max-content; min-width: 100%; border-bottom: 1px solid var(--divider); background: #fff; }
+    /* LANE */
+    .lane-wrap { display: flex; flex-direction: column; width: max-content; min-width: 100%; border-bottom: 1px solid var(--divider); }
+    .lane { display: flex; width: max-content; min-width: 100%; background: #fff; }
     .lane-header { width: 160px; flex-shrink: 0; padding: 10px 14px; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; cursor: grab; }
     .lane-header:active { cursor: grabbing; background: #f0f0f5; }
     .lane-header.drag-over { background: var(--accent-blue-dim); border-right: 2px solid var(--accent-blue); }
@@ -108,19 +96,46 @@
     .lane-content { width: 800px; flex-shrink: 0; position: relative; }
     .lane-y-axis { width: 60px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--divider); position: sticky; right: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
+    /* COMMENT STRIP */
+    .comment-strip-row { display: flex; width: max-content; min-width: 100%; }
+    .comment-strip-header {
+      width: 160px;
+      flex-shrink: 0;
+      background: #f9f9fa;
+      border-right: 1px solid var(--divider);
+      position: sticky;
+      left: 0;
+      z-index: 30;
+      height: var(--comment-strip-h);
+    }
+    
+    .comment-strip-content {
+      width: 800px;
+      flex-shrink: 0;
+      position: relative;
+      height: var(--comment-strip-h);
+      background: #fff;
+    }
+    .comment-strip-y-axis {
+      width: 60px;
+      flex-shrink: 0;
+      background: #fff;
+      border-left: 1px solid var(--divider);
+      position: sticky;
+      right: 0;
+      z-index: 30;
+      height: var(--comment-strip-h);
+    }
+
+    .comment-tick { cursor: pointer; transition: opacity 0.12s; }
+    .comment-tick:hover rect { opacity: 0.7; }
+
     .y-tick-label { font-size: 9px; fill: #999; font-weight: 500; }
     .x-tick-label { font-size: 10px; fill: #999; font-weight: 500; }
     .grid-line { stroke: #f0f0f0; stroke-width: 1; pointer-events: none; }
     
-    /* INTERACTIVE ELEMENTS */
     .clickable-point { cursor: pointer; transition: all 0.1s; }
-    .clickable-point:hover { stroke: var(--text-main); stroke-width: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-    
-    /* COMMENT STRIP */
-    .comment-strip-bg { fill: #f9f9fa; }
-    .comment-strip-border { stroke: #e5e5ea; stroke-width: 1; }
-    .comment-tick { fill: var(--accent-blue); cursor: pointer; transition: opacity 0.2s, transform 0.2s; }
-    .comment-tick:hover { fill: #005bb5; opacity: 0.8; }
+    .clickable-point:hover { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
 
     /* TOOLTIP */
     .tooltip { 
@@ -148,12 +163,8 @@
     .tooltip-label { display: flex; align-items: center; gap: 8px; font-weight: 500; }
     .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;}
     .missing-text { color: #FF3B30; font-style: italic; font-weight: 500; font-size: 10px; letter-spacing: 0.03em; }
-    .alert-row { margin-top: 6px; padding-left: 8px; border-left: 2px solid var(--alert-amber); color: var(--alert-text); display: flex; flex-direction: column; gap: 2px; }
-    .alert-header { font-size: 10px; font-weight: 700; color: var(--alert-amber); display: flex; align-items: center; gap: 4px; }
-    .alert-msg { font-size: 11px; line-height: 1.3; color: var(--text-main); }
-    .addv-detail { display: block; color: var(--text-main); margin-bottom: 2px; }
 
-    /* ─── COMMENT MODAL CSS ─── */
+    /* COMMENT MODAL */
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000;
       display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
@@ -173,10 +184,15 @@
     .ctx-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-blue); flex-shrink: 0; }
     .modal-close { width: 26px; height: 26px; border-radius: 50%; background: #e5e5ea; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; transition: background 0.15s; flex-shrink: 0; }
     .modal-close:hover { background: #d1d1d6; }
-    .compose-area { padding: 14px 18px; border-bottom: 1px solid var(--divider); flex-shrink: 0; }
-    .compose-who { font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .compose-field { width: 100%; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-family: inherit; color: var(--text-main); resize: none; min-height: 76px; outline: none; background: #fafafa; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; line-height: 1.5; }
-    .compose-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); background: #fff; }
+    .compose-area { padding: 14px 18px; border-bottom: 1px solid var(--divider); flex-shrink: 0; background: #fafafa; }
+    
+    .compose-who { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .compose-target-select { font-family: inherit; font-weight: 600; color: var(--text-main); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border-light); background: #fff; outline: none; cursor: pointer; transition: border-color 0.15s; }
+    .compose-target-select:hover { border-color: var(--text-sec); }
+    .comment-item-badge { background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+
+    .compose-field { width: 100%; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-family: inherit; color: var(--text-main); resize: none; min-height: 76px; outline: none; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; line-height: 1.5; }
+    .compose-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
     .compose-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
     .char-count { font-size: 10px; color: var(--text-sec); }
     .btn-post { padding: 6px 16px; background: var(--accent-blue); color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s, transform 0.1s; }
@@ -206,7 +222,7 @@
   <div class="card">
     <div class="card-header">
       <div class="subject-id">SRP-9001-SUBJ</div>
-      <div class="header-hint">Click any point to comment, view all comments on the density bar</div>
+      <div class="header-hint">Click a data point to start a comment. Click a comment tick to read/reply.</div>
     </div>
 
     <div class="controls-container">
@@ -216,17 +232,7 @@
             <span class="panel-title">Laboratory Parameters</span>
           </div>
           <div class="header-actions">
-            <div class="add-group-btn" onclick="openGroupModal()" title="Create Custom Group">+</div>
             <span class="toggle-icon" id="toggle-label-labs" onclick="togglePicker('labs')">Edit</span>
-          </div>
-        </div>
-        <div id="add-group-modal" class="add-group-modal hidden">
-          <div class="panel-title" style="margin-bottom:8px">Create New Group</div>
-          <div class="modal-row"><input type="text" id="new-group-name" class="modal-input" placeholder="Group Name"></div>
-          <div class="lab-select-list" id="modal-lab-list"></div>
-          <div class="modal-footer">
-            <button class="btn-sm btn-cancel" onclick="closeGroupModal()">Cancel</button>
-            <button class="btn-sm btn-save" onclick="saveNewGroup()">Save</button>
           </div>
         </div>
         <div id="labs-pills" class="pills-container hidden" style="margin-top:8px"></div>
@@ -277,7 +283,10 @@
     </div>
 
     <div class="compose-area">
-      <div class="compose-who">Dr. Martinez</div>
+      <div class="compose-who">
+        <span>Dr. Martinez</span>
+        <select id="compose-target-select" class="compose-target-select"></select>
+      </div>
       <textarea class="compose-field" id="compose-field" placeholder="Add a comment…" maxlength="500" oninput="onInput()"></textarea>
       <div class="compose-footer">
         <span class="char-count" id="char-count">0 / 500</span>
@@ -295,133 +304,279 @@
 </div>
 
 <script>
-  // --- 1. DATA DEFINITIONS ---
+  // --- 1. DATA ---
   const defaultTests = {
     Chemistry: [ { name: "Albumin", unit: "g/L" }, { name: "Total Protein", unit: "g/L" } ],
     Enzymes: [ { name: "ALT", unit: "ukat/L" }, { name: "CK", unit: "ukat/L" }, { name: "AST", unit: "ukat/L" } ],
     Hematology: [ { name: "HGB", unit: "g/dL" }, { name: "HCT", unit: "%" } ],
     Kidney: [ { name: "Creatinine", unit: "umol/L" } ]
   };
-  const vitalOptions = [ { name: "Heart Rate", unit: "bpm", color: "#FF2D55" }, { name: "Temperature", unit: "°C", color: "#FF9500" }, { name: "Systolic BP", unit: "mmHg", color: "#AF52DE" }, { name: "Diastolic BP", unit: "mmHg", color: "#5856D6" }, { name: "SpO2", unit: "%", color: "#007AFF" }, { name: "Resp Rate", unit: "/min", color: "#34C759" } ];
+  const vitalOptions = [
+    { name: "Heart Rate", unit: "bpm", color: "#FF2D55" },
+    { name: "Temperature", unit: "°C", color: "#FF9500" },
+    { name: "Systolic BP", unit: "mmHg", color: "#AF52DE" },
+    { name: "Diastolic BP", unit: "mmHg", color: "#5856D6" }
+  ];
 
-  // State
-  let customGroups = {}; 
   const allTestsList = Object.values(defaultTests).flat();
+  // Ensure ALT and CK are selected by default so the user can see the toggle demo
   let selectedTests = ["Albumin", "Total Protein", "ALT", "CK", "HGB"];
   let selectedVitals = ["Heart Rate"];
-  
-  // GLOBAL COMMENTS STORE: { "laneId-day": [ {id, author, body, timestamp} ] }
-  let commentsStore = {};
-  let currentCommentTarget = null; // { laneId: string, day: number, title: string }
 
-  // Mock Data
+  // Comments Key format: `laneId|recordName|day` (e.g., "ae|Rash|60")
+  let commentsStore = {};
+  let currentCommentTarget = null; // { lane, day, clickedItem }
+
+  // Mock data
   const labTestData = {};
   allTestsList.forEach(t => {
     const data = [];
     let base = t.unit === "g/L" ? 40 : t.unit === "ukat/L" ? 0.5 : 10;
     for(let d=0; d<=140; d+=14) {
-      let val = base + (Math.random() * base * 0.2) - (base * 0.1); 
+      let val = base + (Math.random() * base * 0.2) - (base * 0.1);
       if(val < 0) val = 0.1;
       const pt = { d: d, v: parseFloat(val.toFixed(2)) };
-      if (Math.random() < 0.15 && !t.name.includes("Albumin")) { 
-          pt.clinsig = true;
-          pt.comment = "Critical High > 3x ULN";
+      if (Math.random() < 0.15 && !t.name.includes("Albumin")) {
+        pt.clinsig = true; pt.comment = "Critical High > 3x ULN";
       }
       data.push(pt);
     }
     labTestData[t.name] = { unit: t.unit, data: data };
   });
+
   const vitalTestData = {};
   vitalOptions.forEach(v => {
     const data = [];
     let base = v.name === "Heart Rate" ? 75 : v.name === "Temperature" ? 36.6 : 98;
-    for(let d=0; d<=140; d+=1) { let noise = (Math.random() - 0.5) * (base * 0.1); data.push({ d: d, v: parseFloat((base + noise).toFixed(1)) }); }
+    for(let d=0; d<=140; d+=1) {
+      let noise = (Math.random() - 0.5) * (base * 0.1);
+      data.push({ d: d, v: parseFloat((base + noise).toFixed(1)) });
+    }
     vitalTestData[v.name] = { unit: v.unit, color: v.color, data: data };
   });
 
   const albData = labTestData["Albumin"].data;
-  const missingPt = albData.find(p => p.d === 84); if(missingPt) { missingPt.missing = true; missingPt.clinsig = false; }
-  const ecgData = []; { let val = 410; for(let d=0; d<=140; d+=7) { val = val + (Math.random()*20 - 10); ecgData.push({ d: d, v: Math.round(val) }); } }
-  
+  const missingPt = albData.find(p => p.d === 84);
+  if(missingPt) { missingPt.missing = true; missingPt.clinsig = false; }
+
+  const ecgData = [];
+  { let val = 410; for(let d=0; d<=140; d+=7) { val = val + (Math.random()*20 - 10); ecgData.push({ d: d, v: Math.round(val) }); } }
+
   const severityVector = ["Low", "Medium", "High"];
   const clinicalData = {
-    meds: [ { name: "Immuno", start: 12, end: 22, amt: 100 }, { name: "Oral", start: 25, end: 110, amt: 25 }, { name: "IV Boost", start: 45, end: 52, amt: 150 }, { name: "IV Maint", start: 115, end: 125, amt: 80 } ],
-    ae: [ { start: 28, end: 48, type: "Liver Injury", severity: "High" }, { start: 40, end: 75, type: "Fatigue", severity: "Low" }, { start: 60, end: 70, type: "Rash", severity: "Medium" }, { start: 110, end: 130, type: "Headache", severity: "Low" }, { start: 15, end: 20, type: "Fever", severity: "High" }, { start: 85, end: 85, type: "Injection Site Reaction", severity: "Low" } ],
-    addv: [ { day: 20, count: 1, details: ["Sample Hemolyzed"] }, { day: 56, count: 2, details: ["Temp Excursion", "Lab Kit Expired"] }, { day: 90, count: 1, details: ["Protocol Deviation"] } ]
+    meds: [ { name: "Immuno", start: 12, end: 22, amt: 100 }, { name: "Oral", start: 25, end: 110, amt: 25 }, { name: "IV Boost", start: 45, end: 52, amt: 150 } ],
+    ae: [ 
+      // OVERLAPPING AES ON DAY 60 to demo multi-record modal resolution
+      { start: 60, end: 70, type: "Rash", severity: "Medium" }, 
+      { start: 60, end: 80, type: "Nausea", severity: "Low" },
+      { start: 28, end: 48, type: "Liver Injury", severity: "High" }, 
+      { start: 15, end: 20, type: "Fever", severity: "High" } 
+    ],
+    addv: [ { day: 20, count: 1, details: ["Sample Hemolyzed"] }, { day: 90, count: 1, details: ["Protocol Deviation"] } ]
   };
 
-  // Pre-seed a comment on Albumin Day 84 (the missing one)
-  const seedKey = "Albumin-84";
-  commentsStore[seedKey] = [{ id: 1, author: "Dr. Chen", body: "Sample hemolyzed. Requested retest.", timestamp: new Date() }];
+  // Pre-seed comments using the new data structure (LaneId | RecordName | Day)
+  commentsStore["g/L|Albumin|56"] = [{ id: 1, author: "Dr. Chen", body: "Slight dip observed here. Continuing to monitor.", timestamp: new Date() }];
+  
+  // OVERLAPPING LABS ON DAY 28
+  commentsStore["ukat/L|ALT|28"] = [{ id: 4, author: "Dr. Lee", body: "ALT spike noted.", timestamp: new Date(Date.now() - 3600000) }];
+  commentsStore["ukat/L|CK|28"] = [{ id: 5, author: "Dr. Martinez", body: "CK also elevated. Monitoring for muscle toxicity.", timestamp: new Date(Date.now() - 7200000) }];
 
-  // Helpers
-  function getLineColor(index) { const p = ["#1d1d1f", "#0071e3", "#ff3b30", "#34c759", "#ff9500", "#af52de"]; return p[index % p.length]; }
-  function createOrdinalColorScale(vector) { if(!vector || vector.length===0) return ()=>"#9e9e9e"; const s = d3.scaleLinear().domain([0, (vector.length-1)/2, vector.length-1]).range(["#34C759", "#FFD60A", "#FF3B30"]).interpolate(d3.interpolateRgb); return (v) => { const idx = vector.indexOf(v); return idx===-1 ? "#9e9e9e" : s(idx); }; }
+  // OVERLAPPING AEs ON DAY 60
+  commentsStore["ae|Rash|60"] = [{ id: 2, author: "Dr. Lee", body: "Patient reported severe localized itching.", timestamp: new Date(Date.now() - 3600000) }];
+  commentsStore["ae|Nausea|60"] = [{ id: 3, author: "Dr. Martinez", body: "Started shortly after the recent dose escalation.", timestamp: new Date(Date.now() - 7200000) }];
+
+
+  // --- HELPERS ---
+  function getLineColor(index) {
+    const p = ["#1d1d1f", "#0071e3", "#ff3b30", "#34c759", "#ff9500", "#af52de"];
+    return p[index % p.length];
+  }
+  function createOrdinalColorScale(vector) {
+    if(!vector || vector.length===0) return ()=>"#9e9e9e";
+    const s = d3.scaleLinear().domain([0, (vector.length-1)/2, vector.length-1]).range(["#34C759", "#FFD60A", "#FF3B30"]).interpolate(d3.interpolateRgb);
+    return (v) => { const idx = vector.indexOf(v); return idx===-1 ? "#9e9e9e" : s(idx); };
+  }
   const severityScaler = createOrdinalColorScale(severityVector);
-  function calculateRequiredHeight(data) { if (!data || data.length === 0) return 55; const sorted = [...data].sort((a, b) => a.start - b.start); const rows = []; sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { rows[i] = d.end; placed = true; break; } } if(!placed) rows.push(d.end); }); return Math.max(20 + (rows.length * 18), 55); }
-
-  // Extract comments pertinent to a specific visual lane
-  function getLaneComments(lane) {
-    const daysMap = new Map();
-    const prefixes = [];
-    if (lane.type === 'lab') prefixes.push(...lane.tests);
-    else if (lane.type === 'vital') prefixes.push(lane.vitalName);
-    else prefixes.push(lane.id);
-
-    Object.keys(commentsStore).forEach(key => {
-        if(commentsStore[key].length > 0) {
-            prefixes.forEach(p => {
-                if (key.startsWith(p + "-")) {
-                    const day = parseInt(key.substring(p.length + 1));
-                    if (!isNaN(day)) {
-                        if(!daysMap.has(day)) {
-                            daysMap.set(day, p);
-                        }
-                    }
-                }
-            });
-        }
-    });
-    return Array.from(daysMap.entries()).map(([day, prefix]) => ({day, prefix}));
+  
+  function calculateRequiredHeight(data) {
+    if (!data || data.length === 0) return 55;
+    const sorted = [...data].sort((a, b) => a.start - b.start);
+    const rows = [];
+    sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { rows[i] = d.end; placed = true; break; } } if(!placed) rows.push(d.end); });
+    return Math.max(20 + (rows.length * 18), 55);
   }
 
-  // UI
-  let activeLabTab = "Chemistry"; let panelsState = { labs: true, vitals: false }; let tempGroupSelection = [];
+  // --- COMMENT STRIP HELPERS ---
+  
+  // Get all unique days with comments for a given lane
+  function getCommentedDaysForLane(lane) {
+    const daysMap = new Map();
+    Object.keys(commentsStore).forEach(key => {
+      const parts = key.split('|');
+      // parts[0] is lane.id, parts[2] is day
+      if (parts.length === 3 && parts[0] === lane.id && commentsStore[key].length > 0) {
+        const day = parseInt(parts[2]);
+        if (!isNaN(day)) daysMap.set(day, true);
+      }
+    });
+    return Array.from(daysMap.keys()).map(day => ({ day }));
+  }
+
+  // --- COMMENT STRIP RENDERER ---
+  function drawCommentStrip(container, lane, xScale) {
+    const STRIP_H = 12;
+    const commentedDays = getCommentedDaysForLane(lane);
+
+    const stripRow = container.append("div").attr("class", "comment-strip-row");
+
+    // Clean blank header area
+    stripRow.append("div").attr("class", "comment-strip-header");
+
+    const contentDiv = stripRow.append("div").attr("class", "comment-strip-content");
+    const svg = contentDiv.append("svg").attr("width", 800).attr("height", STRIP_H);
+
+    // Background — very subtle grey. 
+    svg.append("rect")
+      .attr("x", 0).attr("y", 0)
+      .attr("width", 800).attr("height", STRIP_H)
+      .attr("fill", "#f5f5f7");
+
+    [0, 28, 56, 84, 112, 140].forEach(t => {
+      svg.append("line")
+        .attr("x1", xScale(t)).attr("x2", xScale(t))
+        .attr("y1", 0).attr("y2", STRIP_H)
+        .attr("stroke", "#e5e5ea").attr("stroke-width", 1);
+    });
+
+    // Tick marks for commented days
+    commentedDays.forEach(c => {
+      const cx = xScale(c.day);
+
+      const g = svg.append("g")
+        .attr("class", "comment-tick")
+        .on("click", function(event) {
+          event.stopPropagation();
+          // Opening from the strip passes `null` for the specific item
+          openCommentModal(lane, c.day, null);
+        });
+
+      g.append("rect")
+        .attr("x", cx - 2).attr("y", 1)
+        .attr("width", 4).attr("height", STRIP_H - 2)
+        .attr("rx", 2).attr("fill", "var(--comment-tick-color)")
+        .attr("opacity", 0.85);
+    });
+
+    stripRow.append("div").attr("class", "comment-strip-y-axis");
+  }
+
+  // --- UI STATE ---
+  let activeLabTab = "Chemistry";
+  let panelsState = { labs: true, vitals: false };
+
   function init() { renderLabsPicker(); renderVitalsPicker(); renderViz(); }
+
   function togglePicker(panelName) { panelsState[panelName] = !panelsState[panelName]; updatePanelUI(panelName); }
-  function updatePanelUI(panelName) { const content = document.getElementById(`${panelName}-content`); const pills = document.getElementById(`${panelName}-pills`); const label = document.getElementById(`toggle-label-${panelName}`); if(panelsState[panelName]) { content.classList.add("open"); pills.classList.add("hidden"); label.innerText = "Done"; label.style.fontWeight = "600"; } else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; } }
-  function getAllLabGroups() { const groups = { ...defaultTests }; Object.keys(customGroups).forEach(k => { groups[k] = customGroups[k].map(name => { return allTestsList.find(t => t.name === name) || { name: name }; }); }); return groups; }
-  function renderLabsPicker() { const groups = getAllLabGroups(); const nav = document.getElementById("tabNav"); nav.innerHTML = ""; Object.keys(groups).forEach(cat => { const btn = document.createElement("button"); btn.className = `segment-btn ${activeLabTab === cat ? 'active' : ''}`; btn.innerText = cat; btn.onclick = (e) => { e.stopPropagation(); activeLabTab = cat; renderLabsPicker(); }; nav.appendChild(btn); }); const list = document.getElementById("testsList"); list.innerHTML = ""; const currentTests = groups[activeLabTab] || []; currentTests.forEach(t => { const isSelected = selectedTests.includes(t.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${t.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleLabTest(t.name); }; list.appendChild(btn); }); const pillContainer = document.getElementById("labs-pills"); pillContainer.innerHTML = ""; if (selectedTests.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No labs selected</span>`; else { selectedTests.forEach(t => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${t}<div class="pill-remove" onclick="event.stopPropagation(); toggleLabTest('${t}')">×</div>`; pillContainer.appendChild(pill); }); } updatePanelUI('labs'); }
+  function updatePanelUI(panelName) {
+    const content = document.getElementById(`${panelName}-content`);
+    const pills = document.getElementById(`${panelName}-pills`);
+    const label = document.getElementById(`toggle-label-${panelName}`);
+    if(panelsState[panelName]) { content.classList.add("open"); pills.classList.add("hidden"); label.innerText = "Done"; label.style.fontWeight = "600"; }
+    else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; }
+  }
+
+  function getAllLabGroups() {
+    return { ...defaultTests };
+  }
+
+  function renderLabsPicker() {
+    const groups = getAllLabGroups();
+    const nav = document.getElementById("tabNav"); nav.innerHTML = "";
+    Object.keys(groups).forEach(cat => { const btn = document.createElement("button"); btn.className = `segment-btn ${activeLabTab === cat ? 'active' : ''}`; btn.innerText = cat; btn.onclick = (e) => { e.stopPropagation(); activeLabTab = cat; renderLabsPicker(); }; nav.appendChild(btn); });
+    const list = document.getElementById("testsList"); list.innerHTML = "";
+    const currentTests = groups[activeLabTab] || [];
+    currentTests.forEach(t => { const isSelected = selectedTests.includes(t.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${t.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleLabTest(t.name); }; list.appendChild(btn); });
+    const pillContainer = document.getElementById("labs-pills"); pillContainer.innerHTML = "";
+    if (selectedTests.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No labs selected</span>`;
+    else { selectedTests.forEach(t => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${t}<div class="pill-remove" onclick="event.stopPropagation(); toggleLabTest('${t}')">×</div>`; pillContainer.appendChild(pill); }); }
+    updatePanelUI('labs');
+  }
+
   function toggleLabTest(name) { if(selectedTests.includes(name)) selectedTests = selectedTests.filter(x => x !== name); else selectedTests.push(name); renderLabsPicker(); renderViz(); }
   function toggleAllCurrentTab() { const groups = getAllLabGroups(); const currentTests = groups[activeLabTab] || []; const names = currentTests.map(t => t.name); const allSelected = names.every(n => selectedTests.includes(n)); if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } renderLabsPicker(); renderViz(); }
-  function renderVitalsPicker() { const list = document.getElementById("vitalsList"); list.innerHTML = ""; vitalOptions.forEach(v => { const isSelected = selectedVitals.includes(v.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${v.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleVital(v.name); }; list.appendChild(btn); }); const pillContainer = document.getElementById("vitals-pills"); pillContainer.innerHTML = ""; if (selectedVitals.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No vitals selected</span>`; else { selectedVitals.forEach(v => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${v}<div class="pill-remove" onclick="event.stopPropagation(); toggleVital('${v}')">×</div>`; pillContainer.appendChild(pill); }); } updatePanelUI('vitals'); }
-  function toggleVital(name) { if(selectedVitals.includes(name)) selectedVitals = selectedVitals.filter(x => x !== name); else selectedVitals.push(name); renderVitalsPicker(); renderViz(); }
-  function openGroupModal() { document.getElementById("add-group-modal").classList.remove("hidden"); document.getElementById("new-group-name").value = ""; tempGroupSelection = []; renderModalList(); }
-  function closeGroupModal() { document.getElementById("add-group-modal").classList.add("hidden"); }
-  function renderModalList() { const c = document.getElementById("modal-lab-list"); c.innerHTML = ""; allTestsList.forEach(t => { const div = document.createElement("div"); const isChecked = tempGroupSelection.includes(t.name); div.className = `lab-option ${isChecked ? 'checked' : ''}`; div.innerText = t.name; div.onclick = () => { if(tempGroupSelection.includes(t.name)) tempGroupSelection = tempGroupSelection.filter(x=>x!==t.name); else tempGroupSelection.push(t.name); renderModalList(); }; c.appendChild(div); }); }
-  function saveNewGroup() { const name = document.getElementById("new-group-name").value.trim(); if (!name || tempGroupSelection.length === 0) return; customGroups[name] = [...tempGroupSelection]; activeLabTab = name; closeGroupModal(); renderLabsPicker(); }
 
-  // --- COMMENT MODAL LOGIC ---
-  function openCommentModal(laneId, day, title) {
-    currentCommentTarget = { laneId, day, title };
-    const modal = document.getElementById("comment-backdrop");
-    const ctxText = document.getElementById("modal-context-text");
-    ctxText.innerHTML = `<span class="ctx-dot"></span>${title} · Day ${day}`;
+  function renderVitalsPicker() {
+    const list = document.getElementById("vitalsList"); list.innerHTML = "";
+    vitalOptions.forEach(v => { const isSelected = selectedVitals.includes(v.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${v.name}</span>`; btn.onclick = (e) => { e.stopPropagation(); toggleVital(v.name); }; list.appendChild(btn); });
+    const pillContainer = document.getElementById("vitals-pills"); pillContainer.innerHTML = "";
+    if (selectedVitals.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No vitals selected</span>`;
+    else { selectedVitals.forEach(v => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${v}<div class="pill-remove" onclick="event.stopPropagation(); toggleVital('${v}')">×</div>`; pillContainer.appendChild(pill); }); }
+    updatePanelUI('vitals');
+  }
+
+  function toggleVital(name) { if(selectedVitals.includes(name)) selectedVitals = selectedVitals.filter(x => x !== name); else selectedVitals.push(name); renderVitalsPicker(); renderViz(); }
+
+  // --- COMMENT MODAL ---
+  function openCommentModal(lane, day, clickedItem) {
+    currentCommentTarget = { lane, day, clickedItem };
     
-    // Clear compose
+    // Find what records exist for this lane/day that ALREADY have comments
+    const existingItemsWithComments = [];
+    Object.keys(commentsStore).forEach(key => {
+        const parts = key.split('|');
+        if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day) {
+            if (commentsStore[key].length > 0) {
+                existingItemsWithComments.push(parts[1]);
+            }
+        }
+    });
+
+    const validItems = new Set(existingItemsWithComments);
+    if (clickedItem) validItems.add(clickedItem);
+
+    const ctxText = document.getElementById("modal-context-text");
+    ctxText.innerHTML = `<span class="ctx-dot"></span>${lane.title} · Day ${day}`;
+
+    // Populate the record target dropdown
+    const selectEl = document.getElementById("compose-target-select");
+    selectEl.innerHTML = "";
+    
+    // Re-render the comments list instantly when the dropdown is toggled
+    selectEl.onchange = () => {
+        renderCommentsList();
+    };
+    
+    if (validItems.size === 0) {
+        selectEl.innerHTML = `<option value="">No targets</option>`;
+        selectEl.disabled = true;
+        document.getElementById("compose-field").disabled = true;
+        document.getElementById("post-btn").disabled = true;
+    } else {
+        selectEl.disabled = false;
+        document.getElementById("compose-field").disabled = false;
+        Array.from(validItems).forEach(item => {
+            const opt = document.createElement("option");
+            opt.value = item;
+            opt.textContent = item;
+            if (item === clickedItem) opt.selected = true;
+            selectEl.appendChild(opt);
+        });
+    }
+
     const field = document.getElementById("compose-field");
-    field.value = "";
+    field.value = ""; 
     onInput();
     
     renderCommentsList();
-    modal.classList.add("open");
-    setTimeout(() => field.focus(), 230);
+    document.getElementById("comment-backdrop").classList.add("open");
+    if(validItems.size > 0) setTimeout(() => field.focus(), 230);
   }
 
   function closeCommentModal() {
     document.getElementById("comment-backdrop").classList.remove("open");
     currentCommentTarget = null;
-    renderViz(); // Re-render to update the comment strip ticks
+    renderViz();
   }
 
   function handleBackdropClick(e) {
@@ -430,48 +585,63 @@
 
   function renderCommentsList() {
     if(!currentCommentTarget) return;
-    const key = `${currentCommentTarget.laneId}-${currentCommentTarget.day}`;
+    const { lane, day } = currentCommentTarget;
     const list = document.getElementById("comments-list");
-    const label = document.getElementById("comment-count-label");
-    const stored = commentsStore[key] || [];
     
-    label.textContent = `${stored.length} comment${stored.length !== 1 ? 's' : ''}`;
+    const selectEl = document.getElementById("compose-target-select");
+    const selectedItem = selectEl.value;
+    
+    let allComments = [];
+    Object.keys(commentsStore).forEach(key => {
+        const parts = key.split('|');
+        // Filter visually down to JUST the actively selected target from the dropdown
+        if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day) {
+            if (parts[1] === selectedItem) {
+                const itemComments = commentsStore[key].map(c => ({...c, recordName: parts[1]}));
+                allComments = allComments.concat(itemComments);
+            }
+        }
+    });
 
-    if(stored.length === 0) {
-      list.innerHTML = `<div class="comments-empty"><div class="empty-label">No comments yet</div></div>`;
-      return;
+    const label = document.getElementById("comment-count-label");
+    label.textContent = `${allComments.length} comment${allComments.length !== 1 ? 's' : ''}`;
+
+    if(allComments.length === 0) { 
+        list.innerHTML = `<div class="comments-empty"><div class="empty-label">No comments yet</div></div>`; 
+        return; 
     }
-
-    const sorted = [...stored].sort((a,b) => b.timestamp - a.timestamp); // Newest first
+    
+    const sorted = allComments.sort((a,b) => b.timestamp - a.timestamp);
+    
     list.innerHTML = sorted.map(c => `
       <div class="comment-item">
         <div class="comment-header">
-          <span class="comment-author">${c.author}</span>
-          <span class="comment-time">${formatTimestamp(c.timestamp)}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span class="comment-author">${c.author}</span>
+                <span class="comment-item-badge">${c.recordName}</span>
+            </div>
+            <span class="comment-time">${formatTimestamp(c.timestamp)}</span>
         </div>
         <div class="comment-body">${c.body}</div>
-      </div>
-    `).join("");
+      </div>`).join("");
   }
 
   function postComment() {
     if(!currentCommentTarget) return;
     const field = document.getElementById("compose-field");
-    const body = field.value.trim();
-    if(!body) return;
+    const body = field.value.trim(); if(!body) return;
+    
+    const selectEl = document.getElementById("compose-target-select");
+    const selectedItem = selectEl.value;
+    if (!selectedItem) return;
 
-    const key = `${currentCommentTarget.laneId}-${currentCommentTarget.day}`;
+    const key = `${currentCommentTarget.lane.id}|${selectedItem}|${currentCommentTarget.day}`;
     if(!commentsStore[key]) commentsStore[key] = [];
     
-    commentsStore[key].push({
-      id: Date.now(),
-      author: "Dr. Martinez",
-      body: body,
-      timestamp: new Date()
-    });
-
-    field.value = "";
-    onInput();
+    commentsStore[key].push({ id: Date.now(), author: "Dr. Martinez", body, timestamp: new Date() });
+    
+    field.value = ""; 
+    onInput(); 
     renderCommentsList();
   }
 
@@ -484,26 +654,27 @@
   }
 
   function formatTimestamp(d) {
-     if(typeof d === 'string') d = new Date(d);
-     const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-     return `${d.getDate()} ${m[d.getMonth()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    if(typeof d === 'string') d = new Date(d);
+    const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${d.getDate()} ${m[d.getMonth()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
   // --- LAYOUT ---
   let baseLayout = [
     { id: "dosing", type: "dosing", title: "Dosing" },
-    { id: "conmeds", type: "conmeds", title: "ConMeds" }, 
+    { id: "conmeds", type: "conmeds", title: "ConMeds" },
     { id: "ecg", type: "ecg", title: "ECG" },
     { id: "ae", type: "ae", title: "Adverse Events" },
     { id: "addv", type: "addv", title: "ADDV" }
   ];
-  let laneOrder = ["dosing", "conmeds", "ecg", "ae", "addv"]; 
+  let laneOrder = ["dosing", "conmeds", "ecg", "ae", "addv"];
 
   function getLayout() {
-    const grouped = {}; selectedTests.forEach(tName => { const t = allTestsList.find(x => x.name === tName); if(!t) return; if(!grouped[t.unit]) grouped[t.unit] = []; grouped[t.unit].push(tName); }); Object.keys(grouped).forEach(u => { if(!laneOrder.includes(u)) laneOrder.push(u); });
+    const grouped = {};
+    selectedTests.forEach(tName => { const t = allTestsList.find(x => x.name === tName); if(!t) return; if(!grouped[t.unit]) grouped[t.unit] = []; grouped[t.unit].push(tName); });
+    Object.keys(grouped).forEach(u => { if(!laneOrder.includes(u)) laneOrder.push(u); });
     selectedVitals.forEach(v => { const id = `vital-${v}`; if(!laneOrder.includes(id)) { const ecgIdx = laneOrder.indexOf("ecg"); if(ecgIdx > -1) laneOrder.splice(ecgIdx + 1, 0, id); else laneOrder.push(id); } });
     
-    // Add 12px height buffering per lane to safely host the "comment strip" at the bottom
     const finalLayout = [];
     laneOrder.forEach(id => {
       const base = baseLayout.find(b => b.id === id);
@@ -513,11 +684,11 @@
         else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
         else if (base.type === 'dosing') h = 35;
         else if (base.type === 'ecg') h = 60;
-        else if (base.type === 'addv') h = 50; 
-        finalLayout.push({ ...base, height: h + 12 }); return;
+        else if (base.type === 'addv') h = 50;
+        finalLayout.push({ ...base, height: h }); return;
       }
-      if(grouped[id]) { finalLayout.push({ id: id, type: 'lab', title: id, tests: grouped[id], height: 82 }); return; }
-      if(id.startsWith("vital-")) { const vName = id.replace("vital-", ""); if(selectedVitals.includes(vName)) { finalLayout.push({ id: id, type: 'vital', title: vName, vitalName: vName, height: 72 }); } }
+      if(grouped[id]) { finalLayout.push({ id, type: 'lab', title: id, tests: grouped[id], height: 70 }); return; }
+      if(id.startsWith("vital-")) { const vName = id.replace("vital-", ""); if(selectedVitals.includes(vName)) { finalLayout.push({ id, type: 'vital', title: vName, vitalName: vName, height: 60 }); } }
     });
     return finalLayout;
   }
@@ -528,17 +699,26 @@
     const root = d3.select("#viz-root").html("");
     const xRange = [0, 800];
     const x = d3.scaleLinear().domain([0, 140]).range(xRange);
-    let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 1, 0); 
+    let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 1, 0);
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
+
     const xContainer = d3.select("#x-axis-container").html("");
     const xSvg = xContainer.append("svg").attr("width", 800).attr("height", 35);
-    [0, 28, 56, 84, 112, 140].forEach(t => { xSvg.append("text").attr("x", x(t)).attr("y", 22).attr("text-anchor", "middle").attr("class", "x-tick-label").text(t); });
+    [0, 28, 56, 84, 112, 140].forEach(t => {
+      xSvg.append("text").attr("x", x(t)).attr("y", 22).attr("text-anchor", "middle").attr("class", "x-tick-label").text(t);
+    });
 
     layout.forEach((lane, index) => {
-      const laneDiv = root.append("div").attr("class", "lane").attr("data-id", lane.id);
+      const laneWrap = root.append("div").attr("class", "lane-wrap").attr("data-id", lane.id);
+      const laneDiv = laneWrap.append("div").attr("class", "lane");
+
       const header = laneDiv.append("div").attr("class", "lane-header").attr("draggable", "true");
-      header.node().addEventListener('dragstart', (e) => handleDragStart(e, index)); header.node().addEventListener('dragover', (e) => handleDragOver(e)); header.node().addEventListener('dragleave', (e) => handleDragLeave(e)); header.node().addEventListener('drop', (e) => handleDrop(e, index));
+      header.node().addEventListener('dragstart', (e) => handleDragStart(e, index));
+      header.node().addEventListener('dragover', (e) => handleDragOver(e));
+      header.node().addEventListener('dragleave', (e) => handleDragLeave(e));
+      header.node().addEventListener('drop', (e) => handleDrop(e, index));
       header.append("div").attr("class", "lane-title").text(lane.title);
+
       let sub = "";
       if(lane.type === 'lab') sub = lane.tests.join(", ");
       else if(lane.type === 'dosing') sub = "Heatmap";
@@ -553,166 +733,149 @@
       const svg = content.append("svg").attr("width", 800).attr("height", lane.height);
       const yAxis = laneDiv.append("div").attr("class", "lane-y-axis");
       const ySvg = yAxis.append("svg").attr("width", 60).attr("height", lane.height);
-      for(let i=0; i<=140; i+=28) svg.append("line").attr("class", "grid-line").attr("x1",x(i)).attr("x2",x(i)).attr("y1",0).attr("y2",lane.height);
-      
-      // Graph content drawing
-      if(lane.type === 'dosing') drawDosing(svg, x, lane.height);
-      if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", "conmeds");
-      if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height);
-      if(lane.type === 'addv') drawADDV(svg, x, lane.height);
+
+      for(let i=0; i<=140; i+=28) {
+        svg.append("line").attr("class", "grid-line").attr("x1", x(i)).attr("x2", x(i)).attr("y1", 0).attr("y2", lane.height);
+      }
+
+      if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
+      if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", lane);
+      if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
+      if(lane.type === 'addv') drawADDV(svg, x, lane.height, lane);
       if(lane.type === 'ae') {
-          drawDurationLane(svg, x, lane.height, clinicalData.ae, (d) => severityScaler(d.severity), "ae");
-          const lg = ySvg.append("g").attr("transform", "translate(6, 10)");
-          severityVector.forEach((label, i) => { const row = lg.append("g").attr("transform", `translate(0, ${i * 14})`); row.append("rect").attr("width", 8).attr("height", 8).attr("rx", 2).attr("fill", severityScaler(label)); row.append("text").attr("x", 12).attr("y", 7).text(label).attr("class", "y-tick-label").style("fill", "var(--text-main)"); });
+        drawDurationLane(svg, x, lane.height, clinicalData.ae, (d) => severityScaler(d.severity), lane);
+        const lg = ySvg.append("g").attr("transform", "translate(6, 10)");
+        severityVector.forEach((label, i) => { const row = lg.append("g").attr("transform", `translate(0, ${i * 14})`); row.append("rect").attr("width", 8).attr("height", 8).attr("rx", 2).attr("fill", severityScaler(label)); row.append("text").attr("x", 12).attr("y", 7).text(label).attr("class", "y-tick-label").style("fill", "var(--text-main)"); });
       }
       if(lane.type === 'lab') drawLabs(svg, ySvg, x, lane);
       if(lane.type === 'vital') drawVitals(svg, ySvg, x, lane);
 
-      // --- COMMENT STRIP DRAWING ---
-      const stripHeight = 8;
-      const stripY = lane.height - stripHeight;
-      const stripG = svg.append("g")
-         .attr("class", "comment-strip-group")
-         .attr("transform", `translate(0, ${stripY})`);
-      
-      stripG.append("rect").attr("width", 800).attr("height", stripHeight).attr("class", "comment-strip-bg");
-      stripG.append("line").attr("x1", 0).attr("x2", 800).attr("y1", 0).attr("y2", 0).attr("class", "comment-strip-border");
-
-      const laneComments = getLaneComments(lane);
-      laneComments.forEach(c => {
-          stripG.append("rect")
-             .attr("x", x(c.day) - 2)
-             .attr("y", 1)
-             .attr("width", 4)
-             .attr("height", stripHeight - 1)
-             .attr("class", "comment-tick")
-             .attr("rx", 1)
-             .on("click", (e) => {
-                 e.stopPropagation();
-                 openCommentModal(c.prefix, c.day, c.prefix);
-             });
-      });
+      drawCommentStrip(laneWrap, lane, x);
     });
-    
+
     setupGlobalTooltip(x, layout);
   }
 
-  function drawADDV(svg, x, h) {
-    const centerY = (h - 12) / 2;
+  // --- DRAW FUNCTIONS ---
+  function drawADDV(svg, x, h, lane) {
+    const centerY = h / 2;
     clinicalData.addv.forEach(d => {
-        const g = svg.append("g")
-           .attr("class", "clickable-point")
-           .on("click", (e) => { e.stopPropagation(); openCommentModal("addv", d.day, "Deviation"); });
-        
-        g.append("circle")
-           .attr("cx", x(d.day)).attr("cy", centerY).attr("r", 10)
-           .attr("fill", "var(--addv-color)")
-           .attr("class", "addv-circle");
-        
-        g.append("text")
-           .attr("x", x(d.day))
-           .attr("y", centerY + 4)
-           .attr("text-anchor", "middle")
-           .attr("class", "addv-text")
-           .text(d.count)
-           .style("fill", "white")
-           .style("font-size", "11px")
-           .style("pointer-events","none");
+      const g = svg.append("g").attr("class", "clickable-point")
+        .on("click", (e) => { e.stopPropagation(); openCommentModal(lane, d.day, "Deviation"); });
+      g.append("circle").attr("cx", x(d.day)).attr("cy", centerY).attr("r", 10).attr("fill", "var(--addv-color)");
+      g.append("text").attr("x", x(d.day)).attr("y", centerY + 4).attr("text-anchor", "middle")
+        .text(d.count).attr("fill", "white").style("font-size", "11px").style("font-weight", "600").style("pointer-events", "none");
     });
   }
 
-  function drawDurationLane(svg, x, h, dataArray, colorConfig, laneId) {
+  function drawDurationLane(svg, x, h, dataArray, colorConfig, lane) {
     const sorted = [...dataArray].sort((a, b) => a.start - b.start);
-    const rows = []; 
+    const rows = [];
     sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { d.rowIndex = i; rows[i] = d.end; placed = true; break; } } if(!placed) { d.rowIndex = rows.length; rows.push(d.end); } });
     const barHeight = 12, barGap = 6;
     sorted.forEach(d => {
-        const y = 10 + (d.rowIndex * (barHeight + barGap));
-        let fill = "#ccc"; if (typeof colorConfig === 'string') fill = colorConfig; if (typeof colorConfig === 'function') fill = colorConfig(d);
-        const width = Math.max(x(d.end) - x(d.start), 4);
+      const y = 10 + (d.rowIndex * (barHeight + barGap));
+      let fill = "#ccc";
+      if (typeof colorConfig === 'string') fill = colorConfig;
+      if (typeof colorConfig === 'function') fill = colorConfig(d);
+      const width = Math.max(x(d.end) - x(d.start), 4);
+      
+      const g = svg.append("g").attr("class", "clickable-point")
+        .on("click", (e) => { e.stopPropagation(); openCommentModal(lane, d.start, d.name || d.type); });
         
-        const g = svg.append("g").attr("class", "clickable-point")
-           .on("click", (e) => { e.stopPropagation(); openCommentModal(laneId, d.start, d.name || d.type); });
-
-        g.append("rect").attr("x", x(d.start)).attr("width", width).attr("y", y).attr("height", barHeight).attr("rx", 3).attr("fill", fill).attr("stroke", "white").attr("stroke-width", 1);
-        if (width > 30) g.append("text").attr("x", x(d.start) + 4).attr("y", y + 9).attr("font-size", "9px").attr("fill", "white").style("pointer-events", "none").style("font-weight", "600").text(d.name || d.type); 
+      g.append("rect").attr("x", x(d.start)).attr("width", width).attr("y", y).attr("height", barHeight).attr("rx", 3).attr("fill", fill).attr("stroke", "white").attr("stroke-width", 1);
+      if (width > 30) g.append("text").attr("x", x(d.start) + 4).attr("y", y + 9).attr("font-size", "9px").attr("fill", "white").style("pointer-events", "none").style("font-weight", "600").text(d.name || d.type);
     });
   }
-  
-  function drawDosing(svg, x, h) { 
-    const daily = []; for(let i=0; i<=140; i++) { let sum = 0; clinicalData.meds.forEach(m => { if(i >= m.start && i <= m.end) sum += m.amt; }); daily.push({ d: i, v: sum }); } 
-    const max = d3.max(daily, d=>d.v); 
-    const colorScale = d3.scaleLinear().domain([0, max]).range(["#f5f5f7", "#1d1d1f"]); 
-    daily.forEach((day, i) => { 
-        const w = x(Math.min(day.d+1, 140)) - x(day.d); 
-        svg.append("rect").attr("x", x(day.d)).attr("y", 4).attr("width", w).attr("height", h - 20).attr("fill", colorScale(day.v)).attr("rx", 2); 
-    }); 
+
+  function drawDosing(svg, x, h, lane) {
+    const daily = [];
+    for(let i=0; i<=140; i++) { let sum = 0; clinicalData.meds.forEach(m => { if(i >= m.start && i <= m.end) sum += m.amt; }); daily.push({ d: i, v: sum }); }
+    const max = d3.max(daily, d=>d.v);
+    const colorScale = d3.scaleLinear().domain([0, max]).range(["#f5f5f7", "#1d1d1f"]);
+    daily.forEach((day) => { const w = x(Math.min(day.d+1, 140)) - x(day.d); svg.append("rect").attr("x", x(day.d)).attr("y", 4).attr("width", w).attr("height", h-8).attr("fill", colorScale(day.v)).attr("rx", 2); });
   }
-  
-  function drawECG(svg, ySvg, x, h) { 
-      const color = getLineColor(0); 
-      const min = d3.min(ecgData, d=>d.v); const max = d3.max(ecgData, d=>d.v); 
-      const y = d3.scaleLinear().domain([min-20, max+20]).range([h-18, 6]); 
-      const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX); 
-      svg.append("path").datum(ecgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none"); 
+
+  function drawECG(svg, ySvg, x, h, lane) {
+    const color = getLineColor(0);
+    const min = d3.min(ecgData, d=>d.v); const max = d3.max(ecgData, d=>d.v);
+    const y = d3.scaleLinear().domain([min-20, max+20]).range([h-6, 6]);
+    const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+    svg.append("path").datum(ecgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none");
+    
+    svg.selectAll(".dot-ecg").data(ecgData).enter().append("circle")
+      .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 3)
+      .attr("fill", "#fff").attr("stroke", color).attr("stroke-width", 1.5)
+      .attr("class", "clickable-point")
+      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, "QTcF"); });
       
-      svg.selectAll(".dot-ecg").data(ecgData).enter().append("path")
-         .attr("d", d3.symbol().type(d3.symbolCircle).size(36)())
-         .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
-         .attr("fill", "#fff")
-         .attr("stroke", color).attr("stroke-width", 1.5)
-         .attr("class", "clickable-point")
-         .on("click", (e, d) => { e.stopPropagation(); openCommentModal("ecg", d.d, "QTcF"); });
-
-      [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); }); 
-      //ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", (h-12)/2 + 10).text("msec").style("opacity", 0.5); 
+    [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); });
+    ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", h/2 + 10).text("msec").style("opacity", 0.5);
   }
-  
-  function drawVitals(svg, ySvg, x, lane) { 
-      const vData = vitalTestData[lane.vitalName]; 
-      const min = d3.min(vData.data, d=>d.v); const max = d3.max(vData.data, d=>d.v); 
-      const y = d3.scaleLinear().domain([min - (min*0.05), max + (max*0.05)]).range([lane.height-18, 6]); 
-      const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear); 
-      svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+
+  function drawVitals(svg, ySvg, x, lane) {
+    const vData = vitalTestData[lane.vitalName];
+    const min = d3.min(vData.data, d=>d.v); const max = d3.max(vData.data, d=>d.v);
+    const y = d3.scaleLinear().domain([min - (min*0.05), max + (max*0.05)]).range([lane.height-6, 6]);
+    const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
+    svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+    
+    // Hit targets
+    svg.selectAll(".dot-vital").data(vData.data).enter().append("circle")
+      .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 4)
+      .attr("fill", "transparent").attr("stroke", "transparent")
+      .attr("class", "clickable-point")
+      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, lane.vitalName); });
       
-      svg.selectAll(".dot-vital").data(vData.data).enter().append("path")
-         .attr("d", d3.symbol().type(d3.symbolCircle).size(36)())
-         .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
-         .attr("fill", "transparent") 
-         .attr("stroke", "transparent")
-         .attr("class", "clickable-point")
-         .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane.vitalName, d.d, lane.vitalName); });
-
-      [Math.floor(min), Math.ceil(max)].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); }); 
+    [Math.floor(min), Math.ceil(max)].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); });
   }
-  
-  function drawLabs(svg, ySvg, x, lane) { 
-      const h = lane.height; let globalMin = Infinity; let globalMax = -Infinity; 
-      lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); }); 
-      if (globalMin === Infinity) return; 
-      const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-18, 6]); 
+
+  function drawLabs(svg, ySvg, x, lane) {
+    const h = lane.height;
+    let globalMin = Infinity, globalMax = -Infinity;
+    lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); });
+    if (globalMin === Infinity) return;
+    const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-6, 6]);
+    lane.tests.forEach((tName, index) => {
+      const tData = labTestData[tName]; if(!tData) return;
+      const color = getLineColor(index);
+      const line = d3.line().defined(d => !d.missing).x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+      svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
       
-      lane.tests.forEach((tName, index) => { 
-          const tData = labTestData[tName]; if(!tData) return; const color = getLineColor(index); 
-          const line = d3.line().defined(d => !d.missing).x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX); 
-          svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none"); 
-          
-          tData.data.forEach((d, i) => { if (d.missing && i > 0 && i < tData.data.length - 1) { const prev = tData.data[i-1]; const next = tData.data[i+1]; if (!prev.missing && !next.missing) svg.append("line").attr("x1", x(prev.d)).attr("y1", y(prev.v)).attr("x2", x(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4"); } }); 
-          
-          svg.selectAll(`.dot-${tName}`).data(tData.data.filter(d => !d.missing)).enter().append("path")
-             .attr("d", d => d.clinsig ? d3.symbol().type(d3.symbolStar).size(64)() : d3.symbol().type(d3.symbolCircle).size(36)())
-             .attr("transform", d => `translate(${x(d.d)},${y(d.v)})`)
-             .attr("fill", d => d.clinsig ? color : "#fff")
-             .attr("stroke", color).attr("stroke-width", 1.5)
-             .attr("class", "clickable-point")
-             .on("click", (e, d) => { e.stopPropagation(); openCommentModal(tName, d.d, tName); });
-      }); 
-      [globalMin, globalMax].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v.toFixed(1)); }); 
+      tData.data.forEach((d, i) => {
+        if (d.missing && i > 0 && i < tData.data.length - 1) {
+          const prev = tData.data[i-1]; const next = tData.data[i+1];
+          if (!prev.missing && !next.missing) svg.append("line").attr("x1", x(prev.d)).attr("y1", y(prev.v)).attr("x2", x(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
+        }
+      });
+      
+      svg.selectAll(`.dot-${tName}`).data(tData.data.filter(d => !d.missing)).enter().append("circle")
+        .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", d => d.clinsig ? 5 : 3.5)
+        .attr("fill", d => d.clinsig ? color : "#fff")
+        .attr("stroke", color).attr("stroke-width", 1.5)
+        .attr("class", "clickable-point")
+        .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, tName); });
+    });
+    [globalMin, globalMax].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v.toFixed(1)); });
   }
 
-  let dragSrcIndex = null; function handleDragStart(e, index) { dragSrcIndex = index; e.dataTransfer.effectAllowed = 'move'; } function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function handleDrop(e, targetIndex) { e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if(dragSrcIndex!==null && dragSrcIndex!==targetIndex) { const c = getLayout(); const sId = c[dragSrcIndex].id; const tId = c[targetIndex].id; const sP = laneOrder.indexOf(sId); const tP = laneOrder.indexOf(tId); if (sP>-1 && tP>-1) { laneOrder.splice(sP, 1); laneOrder.splice(tP, 0, sId); } renderViz(); } dragSrcIndex = null; }
+  // --- DRAG & DROP ---
+  let dragSrcIndex = null;
+  function handleDragStart(e, index) { dragSrcIndex = index; e.dataTransfer.effectAllowed = 'move'; }
+  function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+  function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  function handleDrop(e, targetIndex) {
+    e.stopPropagation(); e.currentTarget.classList.remove('drag-over');
+    if(dragSrcIndex!==null && dragSrcIndex!==targetIndex) {
+      const c = getLayout(); const sId = c[dragSrcIndex].id; const tId = c[targetIndex].id;
+      const sP = laneOrder.indexOf(sId); const tP = laneOrder.indexOf(tId);
+      if (sP>-1 && tP>-1) { laneOrder.splice(sP, 1); laneOrder.splice(tP, 0, sId); }
+      renderViz();
+    }
+    dragSrcIndex = null;
+  }
 
-  // --- TOOLTIP (Fixed for correct X-alignment) ---
+  // --- TOOLTIP ---
   function setupGlobalTooltip(xScale, layout) {
     const container = d3.select("#scroll-container");
     const cursor = d3.select("#global-cursor-line");
@@ -720,25 +883,17 @@
 
     container.on("mousemove", (event) => {
       if(document.getElementById("comment-backdrop").classList.contains("open")) return;
-
-      const [mx] = d3.pointer(event, container.node()); 
-      const graphX = mx - 160; 
+      const [mx] = d3.pointer(event, container.node());
+      const graphX = mx - 160;
       if(graphX < 0) { cursor.style("display","none"); tooltip.style("display","none"); return; }
-
       const day = Math.round(xScale.invert(graphX));
-      
       if(day < 0 || day > 140) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
-      
-      cursor.style("display", "block").style("left", graphX + "px"); 
-      
+      cursor.style("display", "block").style("left", graphX + "px");
+
       let html = `<div class="tooltip-header">Day ${day}</div>`, hasContent = false;
 
       const dev = clinicalData.addv.find(d => d.day === day);
-      if(dev) {
-          let detHtml = ""; dev.details.forEach(d => detHtml += `<span class="addv-detail">• ${d}</span>`);
-          html += `<div class="tooltip-section"><div class="section-title">Deviations (${dev.count})</div>${detHtml}</div>`;
-          hasContent = true;
-      }
+      if(dev) { let detHtml = ""; dev.details.forEach(d => detHtml += `<span class="addv-detail">• ${d}</span>`); html += `<div class="tooltip-section"><div class="section-title">Deviations (${dev.count})</div>${detHtml}</div>`; hasContent = true; }
 
       let dose = 0; clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) dose+=m.amt; });
       if(dose>0) { html+=`<div class="tooltip-section"><div class="section-title">Total Dose</div><div class="tooltip-row"><span style="color:#86868b">Sum</span><span class="tooltip-val">${dose} mg</span></div></div>`; hasContent=true; }
@@ -750,29 +905,20 @@
       if(Math.abs(ecgPt.d-day)<7) { html+=`<div class="tooltip-section"><div class="section-title">ECG</div><div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${getLineColor(0)}"></div>QTcF</div><span class="tooltip-val">${ecgPt.v} ms</span></div></div>`; hasContent=true; }
 
       let vitalHtml = "";
-      selectedVitals.forEach(v => {
-          const d = vitalTestData[v];
-          const pt = d.data.find(p => p.d === day);
-          if(pt) vitalHtml += `<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${d.color}"></div>${v}</div><span class="tooltip-val">${pt.v} <small>${d.unit}</small></span></div>`;
-      });
+      selectedVitals.forEach(v => { const d = vitalTestData[v]; const pt = d.data.find(p => p.d === day); if(pt) vitalHtml += `<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${d.color}"></div>${v}</div><span class="tooltip-val">${pt.v} <small>${d.unit}</small></span></div>`; });
       if(vitalHtml) { html+=`<div class="tooltip-section"><div class="section-title">Vitals</div>${vitalHtml}</div>`; hasContent=true; }
 
       let labHtml = "";
       layout.forEach(lane => {
         if(lane.type === 'lab') {
-           lane.tests.forEach((tName, idx) => {
-              const data = labTestData[tName]; const color = getLineColor(idx);
-              const pt = data.data.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-              if(Math.abs(pt.d-day)<10) {
-                 if(pt.missing) labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="missing-text">MISSING</span></div>`;
-                 else {
-                     labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="tooltip-val">${pt.v} <small>${data.unit}</small></span></div>`;
-                     if(pt.clinsig) {
-                         labHtml += `<div class="alert-row"><div class="alert-header"><span>★</span> Alert</div><div class="alert-msg">${pt.comment || "Significant"}</div></div>`;
-                     }
-                 }
-              }
-           });
+          lane.tests.forEach((tName, idx) => {
+            const data = labTestData[tName]; const color = getLineColor(idx);
+            const pt = data.data.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+            if(Math.abs(pt.d-day)<10) {
+              if(pt.missing) labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="missing-text">MISSING</span></div>`;
+              else { labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="tooltip-val">${pt.v} <small>${data.unit}</small></span></div>`; if(pt.clinsig) labHtml += `<div class="alert-row"><div class="alert-header"><span>⚠</span> Alert</div><div class="alert-msg">${pt.comment || "Significant"}</div></div>`; }
+            }
+          });
         }
       });
       if(labHtml) { html+=`<div class="tooltip-section"><div class="section-title">Labs</div>${labHtml}</div>`; hasContent=true; }
@@ -780,8 +926,8 @@
       let aeHtml = ""; clinicalData.ae.forEach(a => { if(day>=a.start && day<=a.end) { const col = severityScaler(a.severity); aeHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${col}"></div>${a.type}</div><span class="tooltip-val" style="font-weight:400; font-size:10px">${a.severity}</span></div>`; } });
       if(aeHtml) { html+=`<div class="tooltip-section"><div class="section-title">Safety</div>${aeHtml}</div>`; hasContent=true; }
 
-      if(hasContent) { 
-        tooltip.html(html).style("display", "block"); 
+      if(hasContent) {
+        tooltip.html(html).style("display", "block");
         const node = tooltip.node();
         const tooltipRect = node.getBoundingClientRect();
         const padding = 15; const windowWidth = window.innerWidth; const windowHeight = window.innerHeight;
@@ -789,8 +935,8 @@
         if (event.clientX + padding + tooltipRect.width > windowWidth) left = event.pageX - padding - tooltipRect.width;
         if (event.clientY + padding + tooltipRect.height > windowHeight) top = event.pageY - padding - tooltipRect.height;
         tooltip.style("left", left + "px").style("top", top + "px");
-      } else { 
-        tooltip.style("display", "none"); 
+      } else {
+        tooltip.style("display", "none");
       }
     }).on("mouseleave", () => { cursor.style("display", "none"); tooltip.style("display", "none"); });
   }
