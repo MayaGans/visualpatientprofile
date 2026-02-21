@@ -197,32 +197,57 @@
     .clickable-point { cursor: pointer; transition: all 0.1s; }
     .clickable-point:hover { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
 
-    /* TOOLTIP */
-    .tooltip { 
+    /* TOOLTIP REDESIGN */
+    #tooltip { 
       position: absolute; 
-      background: rgba(255, 255, 255, 0.95); 
+      background: rgba(255,255,255,0.98); 
       backdrop-filter: blur(20px); 
       -webkit-backdrop-filter: blur(20px); 
-      border: 1px solid rgba(0,0,0,0.1); 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+      border: 1px solid rgba(0,0,0,0.08); 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.10); 
       border-radius: 12px; 
       padding: 0; 
       pointer-events: none; 
       z-index: 1000; 
-      min-width: 220px; 
+      width: 280px; 
       display: none; 
       font-size: 11px; 
+      color: #1d1d1f;
       overflow: hidden; 
     }
-    .tooltip-header { background: rgba(245, 245, 247, 0.8); padding: 10px 14px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; }
-    .tooltip-section { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-    .tooltip-section:last-child { border-bottom: none; }
-    .section-title { font-size: 10px; text-transform: uppercase; color: var(--text-sec); font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em; }
-    .tooltip-row { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: flex-start; }
-    .tooltip-val { font-weight: 600; font-family: -apple-system, sans-serif; font-size: 12px; text-align: right; }
-    .tooltip-label { display: flex; align-items: center; gap: 8px; font-weight: 500; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;}
-    .missing-text { color: #FF3B30; font-style: italic; font-weight: 500; font-size: 10px; letter-spacing: 0.03em; }
+    .tt-head { padding: 9px 13px 8px; background: #f5f5f7; border-bottom: 1px solid #e8e8ed; display: flex; align-items: baseline; justify-content: space-between; }
+    .tt-day { font-size: 13px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; }
+    .tt-day-sub { font-size: 10px; color: #aeaeb2; font-weight: 500; }
+    .tt-body { padding: 9px 13px; display: flex; flex-direction: column; gap: 9px; }
+    .sec { display: flex; flex-direction: column; gap: 5px; }
+    .sec-head { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #c7c7cc; }
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; background: #f5f5f7; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; line-height: 1; white-space: nowrap; }
+    .chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .chip-name { font-size: 10px; font-weight: 500; color: #86868b; }
+    .chip-val { font-size: 11px; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+    .chip-unit { font-size: 9.5px; font-weight: 400; color: #aeaeb2; }
+    .study-dose { display: inline-flex; align-items: baseline; gap: 3px; background: #eef7ff; border-radius: 5px; padding: 3px 7px; border: 1px solid rgba(0,113,227,0.15); }
+    .study-dose-label { font-size: 9.5px; font-weight: 600; color: #0071e3; text-transform: uppercase; letter-spacing: 0.04em; }
+    .study-dose-val { font-size: 12px; font-weight: 700; color: #0071e3; font-variant-numeric: tabular-nums; }
+    .study-dose-unit { font-size: 9.5px; color: rgba(0,113,227,0.6); }
+    .chip.chip-missing { background: #fff0ef; border-color: rgba(255,59,48,0.15); }
+    .chip.chip-missing .chip-name { color: #ff3b30; }
+    .chip.chip-missing .chip-val { color: #ff3b30; font-style: italic; font-weight: 500; }
+    .chip.chip-alert { background: #fff8f0; border-color: rgba(255,149,0,0.3); padding: 4px 8px 4px 7px; gap: 0; flex-direction: column; align-items: flex-start; }
+    .chip.chip-alert .chip-top { display: flex; align-items: center; gap: 5px; }
+    .chip.chip-alert .chip-val { color: #1d1d1f; }
+    .chip-flag { font-size: 9px; font-weight: 600; color: #FF9500; margin-top: 2px; display: flex; align-items: center; gap: 2px; }
+    .chip-flag::before { content: "▲"; font-size: 7px; }
+    .chip.chip-dev { background: #f0eeff; border-color: rgba(88,86,214,0.2); }
+    .chip.chip-dev .chip-val { color: #5856D6; font-weight: 500; }
+    .chip.ae-high { background: #fff0f0; border-color: rgba(255,59,48,0.2); }
+    .chip.ae-high .chip-val { color: #d93025; }
+    .chip.ae-med { background: #fff8f0; border-color: rgba(255,149,0,0.2); }
+    .chip.ae-med .chip-val { color: #b36200; }
+    .chip.ae-low { background: #f0faf4; border-color: rgba(52,199,89,0.2); }
+    .chip.ae-low .chip-val { color: #1a7a3c; }
+    .tt-div { height: 1px; background: #f0f0f3; margin: 0 -13px; }
 
     /* COMMENT MODAL */
     .modal-backdrop {
@@ -339,7 +364,7 @@
   </div>
 </div>
 
-<div id="tooltip" class="tooltip"></div>
+<div id="tooltip"></div>
 
 <div class="modal-backdrop" id="comment-backdrop" onclick="handleBackdropClick(event)">
   <div class="modal-window" id="comment-modal">
@@ -624,7 +649,6 @@
     else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; }
   }
 
-  // Gets default groups + any custom groupings
   function getAllLabGroups() {
     const groups = { ...defaultTests };
     Object.keys(customGroups).forEach(k => {
@@ -666,7 +690,7 @@
     const name = document.getElementById("new-group-name").value.trim();
     if (!name || tempGroupSelection.length === 0) return;
     customGroups[name] = [...tempGroupSelection];
-    activeLabTab = name; // Auto-focus the new tab
+    activeLabTab = name; 
     closeGroupModal();
     renderLabsPicker();
   }
@@ -887,7 +911,6 @@
     const xRange = [0, 800];
     const x = d3.scaleLinear().domain([0, 140]).range(xRange);
     
-    // Updated Math: Includes the 16px comment strip + 1px border.
     let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 16 + 1, 0) + 35;
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
 
@@ -927,7 +950,6 @@
         svg.append("line").attr("class", "grid-line").attr("x1", x(i)).attr("x2", x(i)).attr("y1", 0).attr("y2", lane.height);
       }
 
-      // Pass the complete X scale to the duration drawer for precise click tracking
       if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
       if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", lane);
       if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
@@ -1031,7 +1053,6 @@
     const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
     svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
     
-    // Hit targets
     svg.selectAll(".dot-vital").data(vData.data).enter().append("circle")
       .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 4)
       .attr("fill", "transparent").attr("stroke", "transparent")
@@ -1086,7 +1107,7 @@
     dragSrcIndex = null;
   }
 
-  // --- TOOLTIP ---
+  // --- TOOLTIP (CHIP-BASED DESIGN) ---
   function setupGlobalTooltip(xScale, layout) {
     const container = d3.select("#scroll-container");
     const cursor = d3.select("#global-cursor-line");
@@ -1101,24 +1122,51 @@
       if(day < 0 || day > 140) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
       cursor.style("display", "block").style("left", graphX + "px");
 
-      let html = `<div class="tooltip-header">Day ${day}</div>`, hasContent = false;
+      let html = `<div class="tt-head"><span class="tt-day">Day ${day}</span><span class="tt-day-sub">Week ${Math.floor(day/7)}</span></div><div class="tt-body">`;
+      let sections = [];
 
+      // Deviations
       const dev = clinicalData.addv.find(d => d.day === day);
-      if(dev) { let detHtml = ""; dev.details.forEach(d => detHtml += `<span class="addv-detail">• ${d}</span>`); html += `<div class="tooltip-section"><div class="section-title">Deviations (${dev.count})</div>${detHtml}</div>`; hasContent = true; }
+      if(dev) { 
+        let detHtml = dev.details.map(d => `<div class="chip chip-dev"><span class="chip-val">${d}</span></div>`).join(""); 
+        sections.push(`<div class="sec"><div class="sec-head">Deviations (${dev.count})</div><div class="chips">${detHtml}</div></div>`); 
+      }
 
+      // Study Drug
       let dose = 0; clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) dose+=m.amt; });
-      if(dose>0) { html+=`<div class="tooltip-section"><div class="section-title">Total Dose</div><div class="tooltip-row"><span style="color:#86868b">Sum</span><span class="tooltip-val">${dose} mg</span></div></div>`; hasContent=true; }
+      if(dose>0) { 
+        sections.push(`<div class="sec"><div class="sec-head">Study Drug</div><div class="chips"><div class="study-dose"><span class="study-dose-label">Total Dose</span><span class="study-dose-val">${dose}</span><span class="study-dose-unit">mg</span></div></div></div>`); 
+      }
 
-      let medHtml = ""; clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) medHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:#9e9e9e"></div>${m.name}</div><span class="tooltip-val">${m.amt} mg</span></div>`; });
-      if(medHtml) { html+=`<div class="tooltip-section"><div class="section-title">Medications</div>${medHtml}</div>`; hasContent=true; }
+      // ConMeds
+      let medHtml = ""; 
+      clinicalData.meds.forEach(m => { 
+        if(day>=m.start && day<=m.end) { 
+          medHtml += `<div class="chip"><span class="chip-name">${m.name}</span><span class="chip-val">${m.amt}</span><span class="chip-unit">mg</span></div>`; 
+        } 
+      });
+      if(medHtml) { 
+        sections.push(`<div class="sec"><div class="sec-head">ConMeds</div><div class="chips">${medHtml}</div></div>`); 
+      }
 
+      // ECG & Vitals
+      let vitalsHtml = "";
       const ecgPt = ecgData.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-      if(Math.abs(ecgPt.d-day)<7) { html+=`<div class="tooltip-section"><div class="section-title">ECG</div><div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${getLineColor(0)}"></div>QTcF</div><span class="tooltip-val">${ecgPt.v} ms</span></div></div>`; hasContent=true; }
+      if(Math.abs(ecgPt.d-day)<7) { 
+        vitalsHtml += `<div class="chip"><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div>`; 
+      }
+      selectedVitals.forEach(v => { 
+        const d = vitalTestData[v]; const pt = d.data.find(p => p.d === day); 
+        if(pt) { 
+          let sName = v.replace("Heart Rate", "HR").replace("Temperature", "Temp").replace("Systolic BP", "Sys BP").replace("Diastolic BP", "Dia BP");
+          vitalsHtml += `<div class="chip"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit}</span></div>`; 
+        } 
+      });
+      if(vitalsHtml) { 
+        sections.push(`<div class="sec"><div class="sec-head">ECG & Vitals</div><div class="chips">${vitalsHtml}</div></div>`); 
+      }
 
-      let vitalHtml = "";
-      selectedVitals.forEach(v => { const d = vitalTestData[v]; const pt = d.data.find(p => p.d === day); if(pt) vitalHtml += `<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${d.color}"></div>${v}</div><span class="tooltip-val">${pt.v} <small>${d.unit}</small></span></div>`; });
-      if(vitalHtml) { html+=`<div class="tooltip-section"><div class="section-title">Vitals</div>${vitalHtml}</div>`; hasContent=true; }
-
+      // Labs
       let labHtml = "";
       layout.forEach(lane => {
         if(lane.type === 'lab') {
@@ -1126,25 +1174,46 @@
             const data = labTestData[tName]; const color = getLineColor(idx);
             const pt = data.data.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
             if(Math.abs(pt.d-day)<10) {
-              if(pt.missing) labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="missing-text">MISSING</span></div>`;
-              else { labHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${color}"></div>${tName}</div><span class="tooltip-val">${pt.v} <small>${data.unit}</small></span></div>`; if(pt.clinsig) labHtml += `<div class="alert-row"><div class="alert-header"><span>⚠</span> Alert</div><div class="alert-msg">${pt.comment || "Significant"}</div></div>`; }
+              let sName = tName.replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr");
+              if(pt.missing) { 
+                labHtml += `<div class="chip chip-missing"><span class="chip-dot" style="background:${color}; opacity:0.4"></span><span class="chip-name">${sName}</span><span class="chip-val">—</span></div>`; 
+              } else if(pt.clinsig) { 
+                labHtml += `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div><span class="chip-flag">${pt.comment || "Alert"}</span></div>`; 
+              } else { 
+                labHtml += `<div class="chip"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div>`; 
+              }
             }
           });
         }
       });
-      if(labHtml) { html+=`<div class="tooltip-section"><div class="section-title">Labs</div>${labHtml}</div>`; hasContent=true; }
+      if(labHtml) { 
+        sections.push(`<div class="sec"><div class="sec-head">Labs</div><div class="chips">${labHtml}</div></div>`); 
+      }
 
-      let aeHtml = ""; clinicalData.ae.forEach(a => { if(day>=a.start && day<=a.end) { const col = severityScaler(a.severity); aeHtml+=`<div class="tooltip-row"><div class="tooltip-label"><div class="dot" style="background:${col}"></div>${a.type}</div><span class="tooltip-val" style="font-weight:400; font-size:10px">${a.severity}</span></div>`; } });
-      if(aeHtml) { html+=`<div class="tooltip-section"><div class="section-title">Safety</div>${aeHtml}</div>`; hasContent=true; }
+      // Safety
+      let aeHtml = ""; 
+      clinicalData.ae.forEach(a => { 
+        if(day>=a.start && day<=a.end) { 
+          let sevClass = a.severity === "High" ? "ae-high" : a.severity === "Medium" ? "ae-med" : "ae-low";
+          aeHtml += `<div class="chip ${sevClass}"><span class="chip-val">${a.type}</span></div>`; 
+        } 
+      });
+      if(aeHtml) { 
+        sections.push(`<div class="sec"><div class="sec-head">Safety</div><div class="chips">${aeHtml}</div></div>`); 
+      }
 
-      if(hasContent) {
+      if(sections.length > 0) {
+        html += sections.join('<div class="tt-div"></div>') + `</div>`;
         tooltip.html(html).style("display", "block");
+        
         const node = tooltip.node();
         const tooltipRect = node.getBoundingClientRect();
         const padding = 15; const windowWidth = window.innerWidth; const windowHeight = window.innerHeight;
         let left = event.pageX + padding; let top = event.pageY + padding;
+        
         if (event.clientX + padding + tooltipRect.width > windowWidth) left = event.pageX - padding - tooltipRect.width;
         if (event.clientY + padding + tooltipRect.height > windowHeight) top = event.pageY - padding - tooltipRect.height;
+        
         tooltip.style("left", left + "px").style("top", top + "px");
       } else {
         tooltip.style("display", "none");
