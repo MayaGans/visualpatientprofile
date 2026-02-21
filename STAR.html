@@ -665,7 +665,7 @@
          .on("click", (e, d) => { e.stopPropagation(); openCommentModal("ecg", d.d, "QTcF"); });
 
       [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); }); 
-      ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", (h-12)/2 + 10).text("msec").style("opacity", 0.5); 
+      //ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", (h-12)/2 + 10).text("msec").style("opacity", 0.5); 
   }
   
   function drawVitals(svg, ySvg, x, lane) { 
