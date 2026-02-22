@@ -3,59 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinical Profile - Comment Strip & Resolution</title>
+  <title>Clinical Profile - Multi-Patient Cohort</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
     :root {
-      --bg-app: #f5f5f7;
-      --bg-panel: #ffffff;
-      --text-main: #1d1d1f;
-      --text-sec: #86868b;
-      --accent-blue: #0071e3;
-      --accent-blue-dim: #eef7ff;
-      --border-light: #d2d2d7;
-      --divider: #e5e5ea;
-      --addv-color: #5856D6;
-      --alert-amber: #FF9500;
-      --alert-text: #1d1d1f;
-      --comment-strip-h: 16px;
-      --comment-tick-color: #0071e3;
+      --bg-app: #f5f5f7; --bg-panel: #ffffff; --text-main: #1d1d1f; --text-sec: #86868b;
+      --accent-blue: #0071e3; --accent-blue-dim: #eef7ff; --border-light: #d2d2d7;
+      --divider: #e5e5ea; --addv-color: #5856D6; --alert-amber: #FF9500; --alert-text: #1d1d1f;
+      --comment-strip-h: 16px; --comment-tick-color: #0071e3;
     }
-
     * { box-sizing: border-box; }
-    
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg-app); 
-      margin: 0; 
-      padding: 20px;
-      color: var(--text-main);
-      -webkit-font-smoothing: antialiased;
-    }
-
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-app); margin: 0; padding: 20px; color: var(--text-main); -webkit-font-smoothing: antialiased; }
     .main-container { width: 100%; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-
-    .card {
-      background: var(--bg-panel);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.05);
-      position: relative;
+    .card { background: var(--bg-panel); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); position: relative; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
+    
+    /* PATIENT SELECTOR STYLING */
+    .subject-id-select {
+        font-family: inherit; font-size: 16px; font-weight: 700; color: var(--text-main);
+        background-color: transparent; border: none; padding-right: 18px; appearance: none;
+        cursor: pointer; outline: none; letter-spacing: -0.01em; transition: color 0.15s;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right center;
     }
+    .subject-id-select:hover, .subject-id-select:focus { color: var(--accent-blue); }
 
-    .card-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--divider);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(10px);
-    }
-    .subject-id { font-weight: 600; font-size: 15px; color: var(--text-main); }
     .header-hint { font-size: 11px; color: var(--text-sec); }
-
     .controls-container { background: #fafafa; border-bottom: 1px solid var(--divider); }
     .panel-row { padding: 14px 18px; border-bottom: 1px solid var(--divider); transition: all 0.2s ease; }
     .panel-row:last-child { border-bottom: none; }
@@ -64,29 +37,11 @@
     .panel-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
     .header-actions { display: flex; align-items: center; gap: 12px; }
     .toggle-icon { font-size: 12px; color: var(--accent-blue); font-weight: 500; cursor: pointer; }
-    
-    .add-group-btn { 
-      width: 20px; 
-      height: 20px; 
-      border-radius: 50%; 
-      background: #e5e5ea; 
-      color: var(--accent-blue); 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      font-size: 16px; 
-      font-weight: 400; 
-      line-height: 0;
-      padding-bottom: 2px;
-      cursor: pointer; 
-      transition: background 0.2s; 
-    }
+    .add-group-btn { width: 20px; height: 20px; border-radius: 50%; background: #e5e5ea; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 400; line-height: 0; padding-bottom: 2px; cursor: pointer; transition: background 0.2s; }
     .add-group-btn:hover { background: #d1d1d6; }
-    
     .panel-content { margin-top: 12px; display: none; }
     .panel-content.open { display: block; animation: slideDown 0.2s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-
     .segmented-control { display: flex; background: #e5e5ea; padding: 2px; border-radius: 8px; margin-bottom: 12px; width: fit-content; max-width: 100%; overflow-x: auto; }
     .segment-btn { padding: 4px 12px; font-size: 11px; font-weight: 500; color: var(--text-main); border: none; background: transparent; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
     .segment-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
@@ -97,8 +52,7 @@
     .pills-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .pill { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--accent-blue-dim); border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; font-size: 11px; color: var(--accent-blue); font-weight: 500; }
     .pill-remove { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 113, 227, 0.1); font-size: 10px; line-height: 1; }
-
-    /* CUSTOM GROUP MODAL CSS */
+    
     .add-group-modal { background: #fff; border: 1px solid #d1d1d6; border-radius: 10px; padding: 12px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .modal-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
     .modal-input { padding: 6px 10px; border: 1px solid #d1d1d6; border-radius: 6px; font-size: 12px; flex: 1; outline: none; }
@@ -110,86 +64,31 @@
     .btn-cancel { background: #e5e5ea; color: #333; }
     .btn-save { background: var(--accent-blue); color: white; }
 
-    .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; }
+    .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; border-bottom: 1px solid var(--divider); }
     #global-interaction-layer { position: absolute; left: 160px; top: 0; width: 800px; z-index: 50; height: 100%; pointer-events: none; } 
     #global-cursor-line { position: absolute; top: 0; bottom: 0; width: 1px; background-color: var(--accent-blue); pointer-events: none; z-index: 40; display: none; left: 0; }
-
-    /* LANE */
+    
+    /* LANES */
     .lane-wrap { display: flex; flex-direction: column; width: max-content; min-width: 100%; border-bottom: 1px solid var(--divider); }
+    .lane-wrap:last-child { border-bottom: none; }
     .lane { display: flex; width: max-content; min-width: 100%; background: #fff; }
     .lane-header { width: 160px; flex-shrink: 0; padding: 10px 14px; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; cursor: grab; }
     .lane-header:active { cursor: grabbing; background: #f0f0f5; }
     .lane-header.drag-over { background: var(--accent-blue-dim); border-right: 2px solid var(--accent-blue); }
-    .lane-title { font-size: 11px; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px; }
+    .lane-title { font-size: 11px; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px; line-height: 1.2; word-wrap: break-word; }
     .lane-subtitle { font-size: 10px; color: var(--text-sec); }
     .lane-content { width: 800px; flex-shrink: 0; position: relative; }
     .lane-y-axis { width: 60px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--divider); position: sticky; right: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
     /* COMMENT STRIP */
-    .comment-strip-row { display: flex; width: max-content; min-width: 100%; }
-    .comment-strip-header {
-      width: 160px;
-      flex-shrink: 0;
-      background: #f9f9fa;
-      border-right: 1px solid var(--divider);
-      position: sticky;
-      left: 0;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 6px;
-      padding: 0 14px;
-      height: var(--comment-strip-h);
-    }
-    
-    .lane-comment-badge {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      background: rgba(0, 113, 227, 0.1);
-      color: var(--accent-blue);
-      border-radius: 8px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .lane-warning-badge {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      background: rgba(255, 149, 0, 0.15);
-      color: #d47000;
-      border-radius: 8px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    
-    .comment-strip-content {
-      width: 800px;
-      flex-shrink: 0;
-      position: relative;
-      height: var(--comment-strip-h);
-      background: #fff;
-    }
-    .comment-strip-y-axis {
-      width: 60px;
-      flex-shrink: 0;
-      background: #fff;
-      border-left: 1px solid var(--divider);
-      position: sticky;
-      right: 0;
-      z-index: 30;
-      height: var(--comment-strip-h);
-    }
-
+    .comment-strip-row { display: flex; width: max-content; min-width: 100%; border-top: 1px solid #f0f0f5; }
+    .comment-strip-header { width: 160px; flex-shrink: 0; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 0 14px; height: var(--comment-strip-h); }
+    .lane-comment-badge { display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-warning-badge { display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(255, 149, 0, 0.15); color: #d47000; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .comment-strip-content { width: 800px; flex-shrink: 0; position: relative; height: var(--comment-strip-h); background: #fff; }
+    .comment-strip-y-axis { width: 60px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--divider); position: sticky; right: 0; z-index: 30; height: var(--comment-strip-h); }
     .comment-tick { cursor: pointer; transition: opacity 0.12s; }
     .comment-tick:hover rect { opacity: 0.7; }
-
     .y-tick-label { font-size: 9px; fill: #999; font-weight: 500; }
     .x-tick-label { font-size: 10px; fill: #999; font-weight: 500; }
     .grid-line { stroke: #f0f0f0; stroke-width: 1; pointer-events: none; }
@@ -197,24 +96,12 @@
     .clickable-point { cursor: pointer; transition: all 0.1s; }
     .clickable-point:hover { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
 
-    /* TOOLTIP REDESIGN */
-    #tooltip { 
-      position: absolute; 
-      background: rgba(255,255,255,0.98); 
-      backdrop-filter: blur(20px); 
-      -webkit-backdrop-filter: blur(20px); 
-      border: 1px solid rgba(0,0,0,0.08); 
-      box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.10); 
-      border-radius: 12px; 
-      padding: 0; 
-      pointer-events: none; 
-      z-index: 1000; 
-      width: 280px; 
-      display: none; 
-      font-size: 11px; 
-      color: #1d1d1f;
-      overflow: hidden; 
-    }
+    /* MISSING DATA MESSAGE */
+    .missing-data-message { padding: 12px 18px; background: #fafafa; font-size: 11px; color: #86868b; text-align: center; }
+    .missing-data-message span { font-weight: 600; color: var(--text-main); }
+
+    /* TOOLTIP */
+    #tooltip { position: absolute; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.10); border-radius: 12px; padding: 0; pointer-events: none; z-index: 1000; width: 280px; display: none; font-size: 11px; color: #1d1d1f; overflow: hidden; }
     .tt-head { padding: 9px 13px 8px; background: #f5f5f7; border-bottom: 1px solid #e8e8ed; display: flex; align-items: baseline; justify-content: space-between; }
     .tt-day { font-size: 13px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; }
     .tt-day-sub { font-size: 10px; color: #aeaeb2; font-weight: 500; }
@@ -222,9 +109,9 @@
     .sec { display: flex; flex-direction: column; gap: 5px; }
     .sec-head { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #c7c7cc; }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; background: #f5f5f7; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; line-height: 1; white-space: nowrap; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; background: #f5f5f7; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; line-height: 1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .chip-name { font-size: 10px; font-weight: 500; color: #86868b; }
+    .chip-name { font-size: 10px; font-weight: 500; color: #86868b; overflow: hidden; text-overflow: ellipsis; }
     .chip-val { font-size: 11px; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; }
     .chip-unit { font-size: 9.5px; font-weight: 400; color: #aeaeb2; }
     .study-dose { display: inline-flex; align-items: baseline; gap: 3px; background: #eef7ff; border-radius: 5px; padding: 3px 7px; border: 1px solid rgba(0,113,227,0.15); }
@@ -241,41 +128,30 @@
     .chip-flag::before { content: "▲"; font-size: 7px; }
     .chip.chip-dev { background: #f0eeff; border-color: rgba(88,86,214,0.2); }
     .chip.chip-dev .chip-val { color: #5856D6; font-weight: 500; }
-    .chip.ae-high { background: #fff0f0; border-color: rgba(255,59,48,0.2); }
-    .chip.ae-high .chip-val { color: #d93025; }
-    .chip.ae-med { background: #fff8f0; border-color: rgba(255,149,0,0.2); }
-    .chip.ae-med .chip-val { color: #b36200; }
-    .chip.ae-low { background: #f0faf4; border-color: rgba(52,199,89,0.2); }
-    .chip.ae-low .chip-val { color: #1a7a3c; }
+    
+    .chip.ae-idx-0 { background: #f0faf4; border-color: rgba(52,199,89,0.2); } .chip.ae-idx-0 .chip-val { color: #1a7a3c; } 
+    .chip.ae-idx-1 { background: #fffde6; border-color: rgba(255,204,0,0.2); } .chip.ae-idx-1 .chip-val { color: #b38f00; } 
+    .chip.ae-idx-2 { background: #fff8f0; border-color: rgba(255,149,0,0.2); } .chip.ae-idx-2 .chip-val { color: #b36200; } 
+    .chip.ae-idx-3 { background: #fff0f0; border-color: rgba(255,59,48,0.2); } .chip.ae-idx-3 .chip-val { color: #d93025; } 
+    .chip.ae-idx-4 { background: #f4eafe; border-color: rgba(175,82,222,0.2); } .chip.ae-idx-4 .chip-val { color: #7b2cb7; } 
     .tt-div { height: 1px; background: #f0f0f3; margin: 0 -13px; }
 
     /* COMMENT MODAL */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000;
-      display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
-    }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
     .modal-backdrop.open { opacity: 1; pointer-events: all; }
-    .modal-window {
-      background: var(--bg-panel); border-radius: 16px; width: 100%; max-width: 460px;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05);
-      overflow: hidden; transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease;
-      opacity: 0; display: flex; flex-direction: column; max-height: calc(100vh - 48px);
-    }
+    .modal-window { background: var(--bg-panel); border-radius: 16px; width: 100%; max-width: 460px; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease; opacity: 0; display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
     .modal-backdrop.open .modal-window { transform: translateY(0) scale(1); opacity: 1; }
     .modal-head { padding: 15px 18px 13px; border-bottom: 1px solid var(--divider); background: #fafafa; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .modal-head-left { display: flex; flex-direction: column; gap: 3px; }
-    .modal-head-title { font-size: 14px; font-weight: 700; color: var(--text-main); letter-spacing: -0.01em; }
     .modal-context { font-size: 11px; color: var(--text-sec); display: flex; align-items: center; gap: 5px; }
     .ctx-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-blue); flex-shrink: 0; }
     .modal-close { width: 26px; height: 26px; border-radius: 50%; background: #e5e5ea; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; transition: background 0.15s; flex-shrink: 0; }
     .modal-close:hover { background: #d1d1d6; }
     .compose-area { padding: 14px 18px; border-bottom: 1px solid var(--divider); flex-shrink: 0; background: #fafafa; }
-    
     .compose-who { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .compose-target-select { font-family: inherit; font-weight: 600; color: var(--text-main); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border-light); background: #fff; outline: none; cursor: pointer; transition: border-color 0.15s; }
+    .compose-target-select { font-family: inherit; font-weight: 600; color: var(--text-main); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border-light); background: #fff; outline: none; cursor: pointer; transition: border-color 0.15s; max-width: 250px; text-overflow: ellipsis; }
     .compose-target-select:hover { border-color: var(--text-sec); }
     .comment-item-badge { background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
-
     .compose-field { width: 100%; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-family: inherit; color: var(--text-main); resize: none; min-height: 76px; outline: none; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; line-height: 1.5; }
     .compose-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
     .compose-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
@@ -297,7 +173,6 @@
     .comment-author { font-size: 12px; font-weight: 600; color: var(--text-main); }
     .comment-time { font-size: 10px; color: var(--text-sec); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
     .comment-body { font-size: 13px; color: var(--text-main); line-height: 1.5; word-break: break-word; }
-    
     .hidden { display: none !important; }
   </style>
 </head>
@@ -306,12 +181,12 @@
 <div class="main-container">
   <div class="card">
     <div class="card-header">
-      <div class="subject-id">SRP-9001-SUBJ</div>
-      <div class="header-hint">Click a data point to start a comment. Click a comment tick to read/reply.</div>
+      <select id="patient-dropdown" class="subject-id-select" onchange="switchPatient()"></select>
+      <div class="header-hint">JSON API Mode: Multi-Patient Data Support</div>
     </div>
 
     <div class="controls-container">
-      <div class="panel-row">
+      <div class="panel-row" id="labs-panel-row">
         <div class="panel-header">
           <div class="panel-left" onclick="togglePicker('labs')">
             <span class="panel-title">Laboratory Parameters</span>
@@ -321,7 +196,6 @@
             <span class="toggle-icon" id="toggle-label-labs" onclick="togglePicker('labs')">Edit</span>
           </div>
         </div>
-        
         <div id="add-group-modal" class="add-group-modal hidden">
           <div class="panel-title" style="margin-bottom:8px">Create New Group</div>
           <div class="modal-row"><input type="text" id="new-group-name" class="modal-input" placeholder="Group Name"></div>
@@ -331,7 +205,6 @@
             <button class="btn-sm btn-save" onclick="saveNewGroup()">Save</button>
           </div>
         </div>
-
         <div id="labs-pills" class="pills-container hidden" style="margin-top:8px"></div>
         <div id="labs-content" class="panel-content">
           <div class="segmented-control" id="tabNav"></div>
@@ -341,8 +214,7 @@
           <div class="test-grid" id="testsList"></div>
         </div>
       </div>
-
-      <div class="panel-row">
+      <div class="panel-row" id="vitals-panel-row">
         <div class="panel-header" onclick="togglePicker('vitals')">
           <span class="panel-title">Vital Signs</span>
           <span class="toggle-icon" id="toggle-label-vitals">Edit</span>
@@ -361,6 +233,8 @@
         <div class="lane-y-axis" style="border-left: 1px solid #e5e5ea;"></div>
       </div>
     </div>
+    
+    <div id="missing-data-message" class="missing-data-message hidden"></div>
   </div>
 </div>
 
@@ -372,13 +246,11 @@
       <div class="modal-head-left">
         <div class="modal-head-title">Comments</div>
         <div class="modal-context" id="modal-context-text">
-          <span class="ctx-dot"></span>
-          Data Point Details
+          <span class="ctx-dot"></span>Data Point Details
         </div>
       </div>
       <button class="modal-close" onclick="closeCommentModal()">✕</button>
     </div>
-
     <div class="compose-area">
       <div class="compose-who">
         <span>Dr. Martinez</span>
@@ -390,109 +262,306 @@
         <button class="btn-post" id="post-btn" onclick="postComment()" disabled>Post</button>
       </div>
     </div>
-
     <div class="section-divider">
       <span class="divider-label" id="comment-count-label">0 comments</span>
       <div class="divider-line"></div>
     </div>
-
     <div class="comments-list" id="comments-list"></div>
   </div>
 </div>
 
 <script>
-  // --- 1. DATA ---
-  const defaultTests = {
-    Chemistry: [ { name: "Albumin", unit: "g/L" }, { name: "Total Protein", unit: "g/L" } ],
-    Enzymes: [ { name: "ALT", unit: "ukat/L" }, { name: "CK", unit: "ukat/L" }, { name: "AST", unit: "ukat/L" } ],
-    Hematology: [ { name: "HGB", unit: "g/dL" }, { name: "HCT", unit: "%" } ],
-    Kidney: [ { name: "Creatinine", unit: "umol/L" } ]
-  };
-  const vitalOptions = [
-    { name: "Heart Rate", unit: "bpm", color: "#FF2D55" },
-    { name: "Temperature", unit: "°C", color: "#FF9500" },
-    { name: "Systolic BP", unit: "mmHg", color: "#AF52DE" },
-    { name: "Diastolic BP", unit: "mmHg", color: "#5856D6" }
-  ];
+  // ==========================================
+  // MULTI-PATIENT JSON PAYLOAD
+  // ==========================================
+  const MOCK_R_JSON = `{
+  "SRP-9001-SUBJ": {
+    "metadata": {
+      "max_day": 183,
+      "ae_severity_levels": ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"]
+    },
+    "defaultTests": {
+      "Chemistry": [
+        { "name": "Alanine Aminotransferase (U/L)", "unit": "U/L" },
+        { "name": "Aspartate Aminotransferase (U/L)", "unit": "U/L" },
+        { "name": "Alkaline Phosphatase (U/L)", "unit": "U/L" },
+        { "name": "Albumin (g/L)", "unit": "g/L" },
+        { "name": "Creatinine (umol/L)", "unit": "umol/L" }
+      ],
+      "Hematology": [
+        { "name": "Hemoglobin (g/L)", "unit": "g/L" },
+        { "name": "Hematocrit (L/L)", "unit": "L/L" }
+      ]
+    },
+    "vitalOptions": [
+      { "name": "Diastolic Blood Pressure", "unit": "mmHg", "color": "#FF9500" },
+      { "name": "Heart Rate", "unit": "beats/min", "color": "#AF52DE" },
+      { "name": "Systolic Blood Pressure", "unit": "mmHg", "color": "#007AFF" },
+      { "name": "Temperature", "unit": "F", "color": "#34C759" }
+    ],
+    "labTestData": {
+      "Alanine Aminotransferase (U/L)": { "unit": "U/L", "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] },
+      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 48, "missing": false, "clinsig": false}, {"d": 0, "v": 46, "missing": false, "clinsig": false}, {"d": 183, "v": 42, "missing": false, "clinsig": false} ] },
+      "Hemoglobin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 170, "missing": false, "clinsig": false}, {"d": 0, "v": 159, "missing": false, "clinsig": false}, {"d": 183, "v": 157, "missing": false, "clinsig": false} ] }
+    },
+    "vitalTestData": {
+      "Diastolic Blood Pressure": { "unit": "mmHg", "color": "#FF9500", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false}, {"d": 183, "v": 84, "clinsig": false} ] },
+      "Heart Rate": { "unit": "beats/min", "color": "#AF52DE", "data": [ {"d": -49, "v": 83, "clinsig": false}, {"d": 0, "v": 84, "clinsig": false}, {"d": 14, "v": 92, "clinsig": false}, {"d": 183, "v": 89, "clinsig": false} ] }
+    },
+    "dosingData": [
+      {"d": 1, "v": 100, "unit": "mg"},
+      {"d": 14, "v": 100, "unit": "mg"}
+    ],
+    "ecgData": [
+      {"d": -49, "v": 410, "clinsig": false},
+      {"d": 0, "v": 415, "clinsig": false},
+      {"d": 14, "v": 425, "clinsig": true},
+      {"d": 183, "v": 420, "clinsig": false}
+    ],
+    "clinicalData": {
+      "conmeds": [
+        {"start": -1709, "end": 183, "name": "Metformin", "amt": 500, "unit": "mg", "ongoing": true},
+        {"start": 15, "end": 15, "name": "Tylenol", "amt": 1000, "unit": "mg", "ongoing": false}
+      ],
+      "ae": [
+        {"start": 15, "end": 20, "type": "Rash of Right upper extremity", "severity": "Grade 1", "ongoing": false},
+        {"start": 15, "end": 15, "type": "Nausea", "severity": "Grade 1", "ongoing": false},
+        {"start": 15, "end": 15, "type": "Pyrexia", "severity": "Grade 2", "ongoing": false}
+      ],
+      "addv": [
+        {"day": 15, "count": 1, "details": ["Dosing and temperature diary were not returned"]}
+      ]
+    }
+  },
+  "SRP-9002-SUBJ": {
+    "metadata": {
+      "max_day": 120,
+      "ae_severity_levels": ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"]
+    },
+    "defaultTests": {
+      "Chemistry": [
+        { "name": "Albumin (g/L)", "unit": "g/L" },
+        { "name": "Creatinine (umol/L)", "unit": "umol/L" }
+      ]
+    },
+    "vitalOptions": [
+      { "name": "Heart Rate", "unit": "beats/min", "color": "#AF52DE" }
+    ],
+    "labTestData": {
+      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -10, "v": 44, "missing": false, "clinsig": false}, {"d": 30, "v": 45, "missing": false, "clinsig": false}, {"d": 120, "v": 43, "missing": false, "clinsig": false} ] },
+      "Creatinine (umol/L)": { "unit": "umol/L", "data": [ {"d": -10, "v": 48, "missing": false, "clinsig": false}, {"d": 30, "v": 49, "missing": false, "clinsig": false}, {"d": 120, "v": 52, "missing": false, "clinsig": false} ] }
+    },
+    "vitalTestData": {
+      "Heart Rate": { "unit": "beats/min", "color": "#AF52DE", "data": [ {"d": -10, "v": 72, "clinsig": true}, {"d": 30, "v": 75, "clinsig": false}, {"d": 120, "v": 74, "clinsig": false} ] }
+    },
+    "dosingData": [
+      {"d": 1, "v": 0, "unit": "mg"},
+      {"d": 14, "v": 0, "unit": "mg"}
+    ],
+    "ecgData": [],
+    "clinicalData": {
+      "conmeds": [],
+      "ae": [
+        {"start": 10, "end": 40, "type": "Fatigue", "severity": "Grade 2", "ongoing": false}
+      ],
+      "addv": []
+    }
+  }
+}`;
 
-  const allTestsList = Object.values(defaultTests).flat();
-  let selectedTests = ["Albumin", "Total Protein", "ALT", "CK", "HGB"];
-  let selectedVitals = ["Heart Rate"];
+  // ==========================================
+  // GLOBALS
+  // ==========================================
+  let masterData = {};
+  let currentPatientId = "";
   
-  // Custom groups state
+  let payload, metadata, defaultTests, vitalOptions, labTestData, vitalTestData, dosingData, ecgData, clinicalData;
+  let minDay = 0, maxDay = 140;
+  let severityVector, severityScaler;
+  let allTestsList = [];
+  
+  // UI State
   let customGroups = {};
   let tempGroupSelection = [];
-
-  // Comments Key format: `laneId|recordName|day` (e.g., "ae|Rash|60")
-  let commentsStore = {};
-  let currentCommentTarget = null; // { lane, day, clickedItem }
-
-  // Mock data
-  const labTestData = {};
-  allTestsList.forEach(t => {
-    const data = [];
-    let base = t.unit === "g/L" ? 40 : t.unit === "ukat/L" ? 0.5 : 10;
-    for(let d=0; d<=140; d+=14) {
-      let val = base + (Math.random() * base * 0.2) - (base * 0.1);
-      if(val < 0) val = 0.1;
-      const pt = { d: d, v: parseFloat(val.toFixed(2)) };
-      if (Math.random() < 0.15 && !t.name.includes("Albumin")) {
-        pt.clinsig = true; pt.comment = "Critical High > 3x ULN";
-      }
-      data.push(pt);
+  let selectedTests = [];
+  let selectedVitals = [];
+  let activeLabTab = "";
+  let panelsState = { labs: true, vitals: false };
+  
+  // The global comments store holds comments for ALL patients
+  let globalCommentsStore = {
+    "SRP-9001-SUBJ": {
+      "dosing|Dosing|14": [{ id: 1, author: "Dr. Chen", body: "Dose escalated per protocol.", timestamp: new Date(Date.now() - 86400000) }],
+      "ae|Rash of Right upper extremity|15": [{ id: 2, author: "Dr. Lee", body: "Patient reported localized itching.", timestamp: new Date(Date.now() - 3600000) }]
+    },
+    "SRP-9002-SUBJ": {
+      "ae|Fatigue|10": [{ id: 3, author: "Dr. Martinez", body: "Patient reported mild fatigue starting today.", timestamp: new Date(Date.now() - 7200000) }]
     }
-    labTestData[t.name] = { unit: t.unit, data: data };
-  });
-
-  const vitalTestData = {};
-  vitalOptions.forEach(v => {
-    const data = [];
-    let base = v.name === "Heart Rate" ? 75 : v.name === "Temperature" ? 36.6 : 98;
-    for(let d=0; d<=140; d+=1) {
-      let noise = (Math.random() - 0.5) * (base * 0.1);
-      data.push({ d: d, v: parseFloat((base + noise).toFixed(1)) });
-    }
-    vitalTestData[v.name] = { unit: v.unit, color: v.color, data: data };
-  });
-
-  const albData = labTestData["Albumin"].data;
-  const missingPt = albData.find(p => p.d === 84);
-  if(missingPt) { missingPt.missing = true; missingPt.clinsig = false; }
-
-  const ecgData = [];
-  { let val = 410; for(let d=0; d<=140; d+=7) { val = val + (Math.random()*20 - 10); ecgData.push({ d: d, v: Math.round(val) }); } }
-
-  const severityVector = ["Low", "Medium", "High"];
-  const clinicalData = {
-    meds: [ { name: "Immuno", start: 12, end: 22, amt: 100 }, { name: "Oral", start: 25, end: 110, amt: 25 }, { name: "IV Boost", start: 45, end: 52, amt: 150 } ],
-    ae: [ 
-      { start: 60, end: 70, type: "Rash", severity: "Medium" }, 
-      { start: 60, end: 80, type: "Nausea", severity: "Low" },
-      { start: 28, end: 48, type: "Liver Injury", severity: "High" }, 
-      { start: 15, end: 20, type: "Fever", severity: "High" } 
-    ],
-    addv: [ { day: 20, count: 1, details: ["Sample Hemolyzed"] }, { day: 90, count: 1, details: ["Protocol Deviation"] } ]
   };
+  
+  // The active comments dictionary points to the current patient's records
+  let commentsStore = {}; 
+  let currentCommentTarget = null; 
 
-  // Pre-seed comments
-  commentsStore["dosing|Dosing|12"] = [{ id: 6, author: "Dr. Chen", body: "Initial dose administered without immediate infusion reactions.", timestamp: new Date(Date.now() - 86400000) }];
-  commentsStore["g/L|Albumin|56"] = [{ id: 1, author: "Dr. Chen", body: "Slight dip observed here. Continuing to monitor.", timestamp: new Date() }];
-  commentsStore["ukat/L|ALT|28"] = [{ id: 4, author: "Dr. Lee", body: "ALT spike noted.", timestamp: new Date(Date.now() - 3600000) }];
-  commentsStore["ukat/L|CK|28"] = [{ id: 5, author: "Dr. Martinez", body: "CK also elevated. Monitoring for muscle toxicity.", timestamp: new Date(Date.now() - 7200000) }];
-  commentsStore["ae|Rash|60"] = [{ id: 2, author: "Dr. Lee", body: "Patient reported severe localized itching.", timestamp: new Date(Date.now() - 3600000) }];
-  commentsStore["ae|Nausea|60"] = [{ id: 3, author: "Dr. Martinez", body: "Started shortly after the recent dose escalation.", timestamp: new Date(Date.now() - 7200000) }];
+  // ==========================================
+  // INITIALIZATION ENGINE
+  // ==========================================
+  function initApp() {
+      masterData = JSON.parse(MOCK_R_JSON);
+      
+      const dropdown = document.getElementById("patient-dropdown");
+      dropdown.innerHTML = "";
+      Object.keys(masterData).forEach(pId => {
+          let opt = document.createElement("option");
+          opt.value = pId;
+          opt.text = pId;
+          dropdown.add(opt);
+      });
+      
+      currentPatientId = Object.keys(masterData)[0];
+      loadPatient(currentPatientId);
+  }
+
+  function switchPatient() {
+      currentPatientId = document.getElementById("patient-dropdown").value;
+      // Reset workspace state for new patient
+      customGroups = {};
+      selectedTests = [];
+      selectedVitals = [];
+      activeLabTab = "";
+      closeCommentModal();
+      loadPatient(currentPatientId);
+  }
+
+function loadPatient(pid) {
+    payload = masterData[pid];
+    
+    // Wire up comments to this specific patient
+    if (!globalCommentsStore[pid]) globalCommentsStore[pid] = {};
+    commentsStore = globalCommentsStore[pid];
+
+    metadata = payload.metadata;
+    maxDay = metadata.max_day || 140;
+    
+    // Calculate global minimum day safely
+    let allDays = [];
+    if(payload.ecgData) payload.ecgData.forEach(d => allDays.push(d.d));
+    if(payload.labTestData) Object.values(payload.labTestData).forEach(t => t.data.forEach(d => allDays.push(d.d)));
+    if(payload.vitalTestData) Object.values(payload.vitalTestData).forEach(t => t.data.forEach(d => allDays.push(d.d)));
+    minDay = allDays.length > 0 ? Math.min(0, d3.min(allDays)) : 0;
+
+    // --- ADD THIS BUFFER LOGIC ---
+    // Adds a 5% margin to the sides (or at least 7 days) so dots aren't cut off
+    let rangeBuffer = Math.max(7, (maxDay - minDay) * 0.05);
+    minDay = Math.floor(minDay - rangeBuffer);
+    maxDay = Math.ceil(maxDay + rangeBuffer);
+    // -----------------------------
+
+    severityVector = metadata.ae_severity_levels || ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
+    severityScaler = createOrdinalColorScale(severityVector);
+    
+    // Prune Labs to ONLY those with real data
+    const validDefaultTests = {};
+    if(payload.defaultTests && payload.labTestData) {
+        Object.keys(payload.defaultTests).forEach(cat => {
+            const validLabs = payload.defaultTests[cat].filter(t => {
+                const lab = payload.labTestData[t.name];
+                return lab && lab.data && lab.data.filter(d => d.v !== null || d.missing).length > 0;
+            });
+            if (validLabs.length > 0) validDefaultTests[cat] = validLabs;
+        });
+    }
+    defaultTests = validDefaultTests;
+
+    // Prune Vitals to ONLY those with real data
+    if(payload.vitalOptions && payload.vitalTestData) {
+        vitalOptions = payload.vitalOptions.filter(v => {
+            const vd = payload.vitalTestData[v.name];
+            return vd && vd.data && vd.data.filter(d => d.v !== null).length > 0;
+        });
+    } else { vitalOptions = []; }
+
+    labTestData = payload.labTestData || {};
+    vitalTestData = payload.vitalTestData || {};
+    ecgData = payload.ecgData || [];
+    clinicalData = payload.clinicalData || { conmeds: [], ae: [], addv: [] };
+
+    // Deduplicate dosing data step function handling
+    let cleanDosing = [];
+    if (payload.dosingData) {
+        const sortedDose = payload.dosingData.sort((a,b) => a.d - b.d);
+        sortedDose.forEach(d => {
+            if(cleanDosing.length === 0 || cleanDosing[cleanDosing.length-1].d !== d.d) {
+                cleanDosing.push(d);
+            }
+        });
+    }
+    dosingData = cleanDosing;
+
+    allTestsList = [];
+    Object.keys(defaultTests).forEach(cat => {
+      defaultTests[cat].forEach(t => allTestsList.push(t));
+    });
+    
+    // Auto-select valid available data 
+    selectedTests = allTestsList.map(t => t.name).slice(0, 5);
+    selectedVitals = vitalOptions.map(v => v.name).slice(0, 5);
+    if(Object.keys(defaultTests).length > 0) activeLabTab = Object.keys(defaultTests)[0];
+
+    evaluateMissingDomains();
+    renderLabsPicker();
+    renderVitalsPicker();
+    renderViz();
+  }
+
+  function evaluateMissingDomains() {
+      const missing = [];
+      if (!clinicalData.conmeds || clinicalData.conmeds.length === 0) missing.push("ConMeds");
+      if (!clinicalData.ae || clinicalData.ae.length === 0) missing.push("Adverse Events");
+      if (!dosingData || dosingData.length === 0) missing.push("Dosing");
+      if (!ecgData || ecgData.length === 0) missing.push("ECG");
+      if (!clinicalData.addv || clinicalData.addv.length === 0) missing.push("Protocol Deviations");
+
+      const labsPanel = document.getElementById("labs-panel-row");
+      if (Object.keys(defaultTests).length === 0) {
+          missing.push("Laboratory Parameters");
+          if(labsPanel) labsPanel.classList.add("hidden");
+      } else {
+          if(labsPanel) labsPanel.classList.remove("hidden");
+      }
+
+      const vitalsPanel = document.getElementById("vitals-panel-row");
+      if (vitalOptions.length === 0) {
+          missing.push("Vital Signs");
+          if(vitalsPanel) vitalsPanel.classList.add("hidden");
+      } else {
+          if(vitalsPanel) vitalsPanel.classList.remove("hidden");
+      }
+
+      const msgDiv = document.getElementById("missing-data-message");
+      if (missing.length > 0) {
+          msgDiv.innerHTML = `No data available for this patient: <span>${missing.join(", ")}</span>`;
+          msgDiv.classList.remove("hidden");
+      } else {
+          msgDiv.classList.add("hidden");
+      }
+  }
 
   // --- HELPERS ---
   function getLineColor(index) {
     const p = ["#1d1d1f", "#0071e3", "#ff3b30", "#34c759", "#ff9500", "#af52de"];
     return p[index % p.length];
   }
+  
   function createOrdinalColorScale(vector) {
-    if(!vector || vector.length===0) return ()=>"#9e9e9e";
+    if(!vector || vector.length === 0) return () => "#9e9e9e";
     const s = d3.scaleLinear().domain([0, (vector.length-1)/2, vector.length-1]).range(["#34C759", "#FFD60A", "#FF3B30"]).interpolate(d3.interpolateRgb);
-    return (v) => { const idx = vector.indexOf(v); return idx===-1 ? "#9e9e9e" : s(idx); };
+    return (v) => { const idx = vector.indexOf(v); return idx === -1 ? "#9e9e9e" : s(idx); };
   }
-  const severityScaler = createOrdinalColorScale(severityVector);
+
+  function getSafeClassName(str) {
+      return str.replace(/[^a-zA-Z0-9]/g, "-");
+  }
   
   function calculateRequiredHeight(data) {
     if (!data || data.length === 0) return 55;
@@ -502,13 +571,23 @@
     return Math.max(20 + (rows.length * 18), 55);
   }
 
+  function getActiveDoseAtDay(day) {
+    if (!dosingData || dosingData.length === 0) return null;
+    let active = null;
+    for(let i=0; i<dosingData.length; i++) {
+        if(dosingData[i].d <= day) active = dosingData[i];
+        else break;
+    }
+    return active;
+  }
+
   function getAvailableItemsAtDay(lane, day) {
     const items = new Set();
     if (lane.type === 'lab') {
       lane.tests.forEach(tName => {
         const tData = labTestData[tName];
         if (tData) {
-          const pt = tData.data.find(d => d.d === day && !d.missing);
+          const pt = tData.data.find(d => d.d === day && !d.missing && d.v !== null);
           if (pt) items.add(tName);
         }
       });
@@ -519,17 +598,13 @@
         if (pt) items.add(lane.vitalName);
       }
     } else if (lane.type === 'ae') {
-      clinicalData.ae.forEach(a => {
-        if (day >= a.start && day <= a.end) items.add(a.type);
-      });
+      clinicalData.ae.forEach(a => { if (day >= a.start && day <= a.end) items.add(a.type); });
     } else if (lane.type === 'conmeds') {
-      clinicalData.meds.forEach(m => {
-        if (day >= m.start && day <= m.end) items.add(m.name);
-      });
+      clinicalData.conmeds.forEach(m => { if (day >= m.start && day <= m.end) items.add(m.name); });
     } else if (lane.type === 'dosing') {
-      let dose = 0;
-      clinicalData.meds.forEach(m => { if (day >= m.start && day <= m.end) dose += m.amt; });
-      if (dose > 0) items.add("Dosing");
+      // Changed to >= 0
+      let dPt = dosingData.find(m => m.d === day && m.v >= 0); 
+      if (dPt) items.add("Dosing");
     } else if (lane.type === 'ecg') {
       const pt = ecgData.find(d => d.d === day);
       if (pt) items.add("QTcF");
@@ -557,9 +632,7 @@
     let count = 0;
     Object.keys(commentsStore).forEach(key => {
       const parts = key.split('|');
-      if (parts.length === 3 && parts[0] === lane.id) {
-        count += commentsStore[key].length;
-      }
+      if (parts.length === 3 && parts[0] === lane.id) count += commentsStore[key].length;
     });
     return count;
   }
@@ -569,10 +642,13 @@
     if (lane.type === 'lab') {
       lane.tests.forEach(tName => {
         const tData = labTestData[tName];
-        if (tData) {
-          count += tData.data.filter(d => d.clinsig && !d.missing).length;
-        }
+        if (tData && tData.data) count += tData.data.filter(d => d.clinsig && !d.missing && d.v !== null).length;
       });
+    } else if (lane.type === 'ecg' && ecgData) {
+      count += ecgData.filter(d => d.clinsig).length;
+    } else if (lane.type === 'vital') {
+      const vData = vitalTestData[lane.vitalName];
+      if (vData && vData.data) count += vData.data.filter(d => d.clinsig && d.v !== null).length;
     }
     return count;
   }
@@ -586,60 +662,33 @@
     const headerDiv = stripRow.append("div").attr("class", "comment-strip-header");
     
     const warningCount = getLaneWarningCount(lane);
-    if (warningCount > 0) {
-      headerDiv.append("div")
-        .attr("class", "lane-warning-badge")
-        .html(`<span>⚠</span> ${warningCount}`);
-    }
+    if (warningCount > 0) headerDiv.append("div").attr("class", "lane-warning-badge").html(`<span>⚠</span> ${warningCount}`);
 
     const count = getLaneCommentCount(lane);
-    if (count > 0) {
-      headerDiv.append("div")
-        .attr("class", "lane-comment-badge")
-        .html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg> ${count}`);
-    }
+    if (count > 0) headerDiv.append("div").attr("class", "lane-comment-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg> ${count}`);
 
     const contentDiv = stripRow.append("div").attr("class", "comment-strip-content");
     const svg = contentDiv.append("svg").attr("width", 800).attr("height", STRIP_H);
 
-    svg.append("rect")
-      .attr("x", 0).attr("y", 0)
-      .attr("width", 800).attr("height", STRIP_H)
-      .attr("fill", "#f5f5f7");
+    svg.append("rect").attr("x", 0).attr("y", 0).attr("width", 800).attr("height", STRIP_H).attr("fill", "#f5f5f7");
 
-    [0, 28, 56, 84, 112, 140].forEach(t => {
-      svg.append("line")
-        .attr("x1", xScale(t)).attr("x2", xScale(t))
-        .attr("y1", 0).attr("y2", STRIP_H)
-        .attr("stroke", "#e5e5ea").attr("stroke-width", 1);
+    const tickValues = xScale.ticks(10);
+    tickValues.forEach(t => {
+      svg.append("line").attr("x1", xScale(t)).attr("x2", xScale(t)).attr("y1", 0).attr("y2", STRIP_H).attr("stroke", "#e5e5ea").attr("stroke-width", 1);
     });
 
     commentedDays.forEach(c => {
       const cx = xScale(c.day);
-
-      const g = svg.append("g")
-        .attr("class", "comment-tick")
-        .on("click", function(event) {
-          event.stopPropagation();
-          openCommentModal(lane, c.day, null);
-        });
-
-      g.append("rect")
-        .attr("x", cx - 2).attr("y", 1)
-        .attr("width", 4).attr("height", STRIP_H - 2)
-        .attr("rx", 2).attr("fill", "var(--comment-tick-color)")
-        .attr("opacity", 0.85);
+      if (cx >= 0 && cx <= 800) {
+        const g = svg.append("g").attr("class", "comment-tick").on("click", (e) => { e.stopPropagation(); openCommentModal(lane, c.day, null); });
+        g.append("rect").attr("x", cx - 2).attr("y", 1).attr("width", 4).attr("height", STRIP_H - 2).attr("rx", 2).attr("fill", "var(--comment-tick-color)").attr("opacity", 0.85);
+      }
     });
 
     stripRow.append("div").attr("class", "comment-strip-y-axis");
   }
 
-  // --- UI STATE & MODALS ---
-  let activeLabTab = "Chemistry";
-  let panelsState = { labs: true, vitals: false };
-
-  function init() { renderLabsPicker(); renderVitalsPicker(); renderViz(); }
-
+  // --- UI CONTROLS ---
   function togglePicker(panelName) { panelsState[panelName] = !panelsState[panelName]; updatePanelUI(panelName); }
   function updatePanelUI(panelName) {
     const content = document.getElementById(`${panelName}-content`);
@@ -649,56 +698,40 @@
     else { content.classList.remove("open"); pills.classList.remove("hidden"); label.innerText = "Edit"; label.style.fontWeight = "400"; }
   }
 
-  // Gets default groups + any custom groupings
   function getAllLabGroups() {
     const groups = { ...defaultTests };
-    Object.keys(customGroups).forEach(k => {
-      groups[k] = customGroups[k].map(name => allTestsList.find(t => t.name === name) || { name });
-    });
+    Object.keys(customGroups).forEach(k => { groups[k] = customGroups[k].map(name => allTestsList.find(t => t.name === name) || { name }); });
     return groups;
   }
 
-  // --- CUSTOM GROUP MODAL FUNCTIONS ---
-  function openGroupModal() {
-    document.getElementById("add-group-modal").classList.remove("hidden");
-    document.getElementById("new-group-name").value = "";
-    tempGroupSelection = [];
-    renderModalList();
-  }
-
-  function closeGroupModal() {
-    document.getElementById("add-group-modal").classList.add("hidden");
-  }
-
+  function openGroupModal() { document.getElementById("add-group-modal").classList.remove("hidden"); document.getElementById("new-group-name").value = ""; tempGroupSelection = []; renderModalList(); }
+  function closeGroupModal() { document.getElementById("add-group-modal").classList.add("hidden"); }
   function renderModalList() {
-    const c = document.getElementById("modal-lab-list");
-    c.innerHTML = "";
+    const c = document.getElementById("modal-lab-list"); c.innerHTML = "";
     allTestsList.forEach(t => {
       const div = document.createElement("div");
       const isChecked = tempGroupSelection.includes(t.name);
       div.className = `lab-option ${isChecked ? 'checked' : ''}`;
       div.innerText = t.name;
-      div.onclick = () => {
-        if(tempGroupSelection.includes(t.name)) tempGroupSelection = tempGroupSelection.filter(x=>x!==t.name);
-        else tempGroupSelection.push(t.name);
-        renderModalList();
-      };
+      div.onclick = () => { if(tempGroupSelection.includes(t.name)) tempGroupSelection = tempGroupSelection.filter(x=>x!==t.name); else tempGroupSelection.push(t.name); renderModalList(); };
       c.appendChild(div);
     });
   }
-
   function saveNewGroup() {
     const name = document.getElementById("new-group-name").value.trim();
     if (!name || tempGroupSelection.length === 0) return;
     customGroups[name] = [...tempGroupSelection];
-    activeLabTab = name; 
-    closeGroupModal();
-    renderLabsPicker();
+    activeLabTab = name; closeGroupModal(); renderLabsPicker();
   }
 
   function renderLabsPicker() {
     const groups = getAllLabGroups();
     const nav = document.getElementById("tabNav"); nav.innerHTML = "";
+    if (Object.keys(groups).length === 0) {
+        document.getElementById("labs-content").innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No lab data available</span>`;
+        return;
+    }
+    
     Object.keys(groups).forEach(cat => { const btn = document.createElement("button"); btn.className = `segment-btn ${activeLabTab === cat ? 'active' : ''}`; btn.innerText = cat; btn.onclick = (e) => { e.stopPropagation(); activeLabTab = cat; renderLabsPicker(); }; nav.appendChild(btn); });
     const list = document.getElementById("testsList"); list.innerHTML = "";
     const currentTests = groups[activeLabTab] || [];
@@ -710,17 +743,7 @@
   }
 
   function toggleLabTest(name) { if(selectedTests.includes(name)) selectedTests = selectedTests.filter(x => x !== name); else selectedTests.push(name); renderLabsPicker(); renderViz(); }
-  
-  function toggleAllCurrentTab() { 
-    const groups = getAllLabGroups(); 
-    const currentTests = groups[activeLabTab] || []; 
-    const names = currentTests.map(t => t.name); 
-    const allSelected = names.every(n => selectedTests.includes(n)); 
-    if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); 
-    else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } 
-    renderLabsPicker(); 
-    renderViz(); 
-  }
+  function toggleAllCurrentTab() { const groups = getAllLabGroups(); const currentTests = groups[activeLabTab] || []; const names = currentTests.map(t => t.name); const allSelected = names.every(n => selectedTests.includes(n)); if (allSelected) selectedTests = selectedTests.filter(n => !names.includes(n)); else { const toAdd = names.filter(n => !selectedTests.includes(n)); selectedTests = [...selectedTests, ...toAdd]; } renderLabsPicker(); renderViz(); }
 
   function renderVitalsPicker() {
     const list = document.getElementById("vitalsList"); list.innerHTML = "";
@@ -733,7 +756,7 @@
 
   function toggleVital(name) { if(selectedVitals.includes(name)) selectedVitals = selectedVitals.filter(x => x !== name); else selectedVitals.push(name); renderVitalsPicker(); renderViz(); }
 
-  // --- COMMENT MODAL ---
+  // --- MODAL ---
   function openCommentModal(lane, day, clickedItem) {
     currentCommentTarget = { lane, day, clickedItem };
     
@@ -741,9 +764,7 @@
     Object.keys(commentsStore).forEach(key => {
         const parts = key.split('|');
         if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day) {
-            if (commentsStore[key].length > 0) {
-                existingItemsWithComments.push(parts[1]);
-            }
+            if (commentsStore[key].length > 0) existingItemsWithComments.push(parts[1]);
         }
     });
 
@@ -762,75 +783,51 @@
     
     if (validItems.size === 0) {
         selectEl.innerHTML = `<option value="">No targets</option>`;
-        selectEl.disabled = true;
-        document.getElementById("compose-field").disabled = true;
-        document.getElementById("post-btn").disabled = true;
+        selectEl.disabled = true; document.getElementById("compose-field").disabled = true; document.getElementById("post-btn").disabled = true;
     } else {
-        selectEl.disabled = false;
-        document.getElementById("compose-field").disabled = false;
+        selectEl.disabled = false; document.getElementById("compose-field").disabled = false;
         Array.from(validItems).forEach(item => {
-            const opt = document.createElement("option");
-            opt.value = item;
-            opt.textContent = item;
-            if (item === defaultItem) opt.selected = true;
-            selectEl.appendChild(opt);
+            const opt = document.createElement("option"); opt.value = item; opt.textContent = item;
+            if (item === defaultItem) opt.selected = true; selectEl.appendChild(opt);
         });
     }
 
-    const field = document.getElementById("compose-field");
-    field.value = ""; 
-    onInput();
-    
+    const field = document.getElementById("compose-field"); field.value = ""; onInput();
     renderCommentsList();
     document.getElementById("comment-backdrop").classList.add("open");
     if(validItems.size > 0) setTimeout(() => field.focus(), 230);
   }
 
-  function closeCommentModal() {
-    document.getElementById("comment-backdrop").classList.remove("open");
-    currentCommentTarget = null;
-    renderViz();
-  }
-
-  function handleBackdropClick(e) {
-    if (e.target === document.getElementById("comment-backdrop")) closeCommentModal();
-  }
+  function closeCommentModal() { document.getElementById("comment-backdrop").classList.remove("open"); currentCommentTarget = null; renderViz(); }
+  function handleBackdropClick(e) { if (e.target === document.getElementById("comment-backdrop")) closeCommentModal(); }
 
   function renderCommentsList() {
     if(!currentCommentTarget) return;
     const { lane, day } = currentCommentTarget;
     const list = document.getElementById("comments-list");
-    
     const selectEl = document.getElementById("compose-target-select");
     const selectedItem = selectEl.value;
     
     let allComments = [];
     Object.keys(commentsStore).forEach(key => {
         const parts = key.split('|');
-        if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day) {
-            if (parts[1] === selectedItem) {
-                const itemComments = commentsStore[key].map(c => ({...c, recordName: parts[1]}));
-                allComments = allComments.concat(itemComments);
-            }
+        if (parts.length === 3 && parts[0] === lane.id && parseInt(parts[2]) === day && parts[1] === selectedItem) {
+            const itemComments = commentsStore[key].map(c => ({...c, recordName: parts[1]}));
+            allComments = allComments.concat(itemComments);
         }
     });
 
     const label = document.getElementById("comment-count-label");
     label.textContent = `${allComments.length} comment${allComments.length !== 1 ? 's' : ''}`;
-
-    if(allComments.length === 0) { 
-        list.innerHTML = `<div class="comments-empty"><div class="empty-label">No comments yet</div></div>`; 
-        return; 
-    }
+    if(allComments.length === 0) { list.innerHTML = `<div class="comments-empty"><div class="empty-label">No comments yet</div></div>`; return; }
     
     const sorted = allComments.sort((a,b) => b.timestamp - a.timestamp);
-    
     list.innerHTML = sorted.map(c => `
       <div class="comment-item">
         <div class="comment-header">
-            <div style="display:flex; align-items:center; gap:6px;">
-                <span class="comment-author">${c.author}</span>
-                <span class="comment-item-badge">${c.recordName}</span>
+            <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+              <span class="comment-author" style="flex-shrink:0;">${c.author}</span>
+              <span class="comment-item-badge" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">${c.recordName}</span>
             </div>
             <span class="comment-time">${formatTimestamp(c.timestamp)}</span>
         </div>
@@ -840,28 +837,19 @@
 
   function postComment() {
     if(!currentCommentTarget) return;
-    const field = document.getElementById("compose-field");
-    const body = field.value.trim(); if(!body) return;
-    
-    const selectEl = document.getElementById("compose-target-select");
-    const selectedItem = selectEl.value;
-    if (!selectedItem) return;
+    const field = document.getElementById("compose-field"); const body = field.value.trim(); if(!body) return;
+    const selectEl = document.getElementById("compose-target-select"); const selectedItem = selectEl.value; if (!selectedItem) return;
 
     const key = `${currentCommentTarget.lane.id}|${selectedItem}|${currentCommentTarget.day}`;
     if(!commentsStore[key]) commentsStore[key] = [];
-    
     commentsStore[key].push({ id: Date.now(), author: "Dr. Martinez", body, timestamp: new Date() });
     
-    field.value = ""; 
-    onInput(); 
-    renderCommentsList();
+    field.value = ""; onInput(); renderCommentsList();
   }
 
   function onInput() {
-    const field = document.getElementById("compose-field");
-    const btn = document.getElementById("post-btn");
-    const count = document.getElementById("char-count");
-    count.textContent = `${field.value.length} / 500`;
+    const field = document.getElementById("compose-field"); const btn = document.getElementById("post-btn");
+    const count = document.getElementById("char-count"); count.textContent = `${field.value.length} / 500`;
     btn.disabled = field.value.trim().length === 0;
   }
 
@@ -891,8 +879,15 @@
     laneOrder.forEach(id => {
       const base = baseLayout.find(b => b.id === id);
       if(base) {
+        // Dynamic Lane Pruning - drop empty features automatically
+        if (base.id === 'conmeds' && (!clinicalData.conmeds || clinicalData.conmeds.length === 0)) return;
+        if (base.id === 'ae' && (!clinicalData.ae || clinicalData.ae.length === 0)) return;
+        if (base.id === 'dosing' && (!dosingData || dosingData.length === 0)) return;
+        if (base.id === 'ecg' && (!ecgData || ecgData.length === 0)) return;
+        if (base.id === 'addv' && (!clinicalData.addv || clinicalData.addv.length === 0)) return;
+
         let h = 50;
-        if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.meds);
+        if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.conmeds);
         else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
         else if (base.type === 'dosing') h = 35;
         else if (base.type === 'ecg') h = 60;
@@ -910,15 +905,16 @@
     const layout = getLayout();
     const root = d3.select("#viz-root").html("");
     const xRange = [0, 800];
-    const x = d3.scaleLinear().domain([0, 140]).range(xRange);
+    const x = d3.scaleLinear().domain([minDay, maxDay]).range(xRange);
     
-    // Updated Math: Includes the 16px comment strip + 1px border.
     let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 16 + 1, 0) + 35;
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
 
     const xContainer = d3.select("#x-axis-container").html("");
     const xSvg = xContainer.append("svg").attr("width", 800).attr("height", 35);
-    [0, 28, 56, 84, 112, 140].forEach(t => {
+    
+    const tickValues = x.ticks(10);
+    tickValues.forEach(t => {
       xSvg.append("text").attr("x", x(t)).attr("y", 22).attr("text-anchor", "middle").attr("class", "x-tick-label").text(t);
     });
 
@@ -935,11 +931,11 @@
 
       let sub = "";
       if(lane.type === 'lab') sub = lane.tests.join(", ");
-      else if(lane.type === 'dosing') sub = "Heatmap";
+      else if(lane.type === 'dosing') sub = "Step Intervals";
       else if(lane.type === 'conmeds') sub = "Durations";
       else if(lane.type === 'ecg') sub = "QTcF";
       else if(lane.type === 'addv') sub = "Deviations";
-      else if(lane.type === 'vital') sub = vitalTestData[lane.vitalName].unit;
+      else if(lane.type === 'vital') sub = vitalTestData[lane.vitalName]?.unit || "";
       else sub = "Severity";
       header.append("div").attr("class", "lane-subtitle").text(sub);
 
@@ -948,19 +944,22 @@
       const yAxis = laneDiv.append("div").attr("class", "lane-y-axis");
       const ySvg = yAxis.append("svg").attr("width", 60).attr("height", lane.height);
 
-      for(let i=0; i<=140; i+=28) {
-        svg.append("line").attr("class", "grid-line").attr("x1", x(i)).attr("x2", x(i)).attr("y1", 0).attr("y2", lane.height);
-      }
+      tickValues.forEach(t => {
+        svg.append("line").attr("class", "grid-line").attr("x1", x(t)).attr("x2", x(t)).attr("y1", 0).attr("y2", lane.height);
+      });
 
-      // Pass the complete X scale to the duration drawer for precise click tracking
       if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
-      if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.meds, "#9e9e9e", lane);
+      if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.conmeds, "#9e9e9e", lane);
       if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
       if(lane.type === 'addv') drawADDV(svg, x, lane.height, lane);
       if(lane.type === 'ae') {
         drawDurationLane(svg, x, lane.height, clinicalData.ae, (d) => severityScaler(d.severity), lane);
         const lg = ySvg.append("g").attr("transform", "translate(6, 10)");
-        severityVector.forEach((label, i) => { const row = lg.append("g").attr("transform", `translate(0, ${i * 14})`); row.append("rect").attr("width", 8).attr("height", 8).attr("rx", 2).attr("fill", severityScaler(label)); row.append("text").attr("x", 12).attr("y", 7).text(label).attr("class", "y-tick-label").style("fill", "var(--text-main)"); });
+        severityVector.forEach((label, i) => { 
+            const row = lg.append("g").attr("transform", `translate(0, ${i * 12})`); 
+            row.append("rect").attr("width", 8).attr("height", 8).attr("rx", 2).attr("fill", severityScaler(label)); 
+            row.append("text").attr("x", 12).attr("y", 7).text(label).attr("class", "y-tick-label").style("fill", "var(--text-main)").style("font-size", "8px"); 
+        });
       }
       if(lane.type === 'lab') drawLabs(svg, ySvg, x, lane);
       if(lane.type === 'vital') drawVitals(svg, ySvg, x, lane);
@@ -972,126 +971,187 @@
   }
 
   // --- DRAW FUNCTIONS ---
-  function drawADDV(svg, x, h, lane) {
+  function drawADDV(svg, xScale, h, lane) {
+    if(!clinicalData.addv) return;
     const centerY = h / 2;
     clinicalData.addv.forEach(d => {
-      const g = svg.append("g").attr("class", "clickable-point")
-        .on("click", (e) => { e.stopPropagation(); openCommentModal(lane, d.day, "Deviation"); });
-      g.append("circle").attr("cx", x(d.day)).attr("cy", centerY).attr("r", 10).attr("fill", "var(--addv-color)");
-      g.append("text").attr("x", x(d.day)).attr("y", centerY + 4).attr("text-anchor", "middle")
-        .text(d.count).attr("fill", "white").style("font-size", "11px").style("font-weight", "600").style("pointer-events", "none");
+      const cx = xScale(d.day);
+      if (cx >= 0 && cx <= 800) {
+          const g = svg.append("g").attr("class", "clickable-point").on("click", (e) => { e.stopPropagation(); openCommentModal(lane, d.day, "Deviation"); });
+          g.append("circle").attr("cx", cx).attr("cy", centerY).attr("r", 10).attr("fill", "var(--addv-color)");
+          g.append("text").attr("x", cx).attr("y", centerY + 4).attr("text-anchor", "middle").text(d.count).attr("fill", "white").style("font-size", "11px").style("font-weight", "600").style("pointer-events", "none");
+      }
     });
   }
 
   function drawDurationLane(svg, xScale, h, dataArray, colorConfig, lane) {
+    if(!dataArray || dataArray.length === 0) return;
     const sorted = [...dataArray].sort((a, b) => a.start - b.start);
     const rows = [];
     sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { d.rowIndex = i; rows[i] = d.end; placed = true; break; } } if(!placed) { d.rowIndex = rows.length; rows.push(d.end); } });
     const barHeight = 12, barGap = 6;
+    
     sorted.forEach(d => {
       const y = 10 + (d.rowIndex * (barHeight + barGap));
-      let fill = "#ccc";
-      if (typeof colorConfig === 'string') fill = colorConfig;
-      if (typeof colorConfig === 'function') fill = colorConfig(d);
-      const width = Math.max(xScale(d.end) - xScale(d.start), 4);
+      let fill = "#ccc"; if (typeof colorConfig === 'string') fill = colorConfig; if (typeof colorConfig === 'function') fill = colorConfig(d);
       
-      const g = svg.append("g").attr("class", "clickable-point")
-        .on("click", (e) => { 
+      const startX = xScale(d.start);
+      const endX = xScale(d.end);
+      const drawStartX = Math.max(0, startX);
+      const drawWidth = Math.max(endX - drawStartX, 4);
+      
+      if (endX < 0) return;
+
+      const g = svg.append("g").attr("class", "clickable-point").on("click", (e) => { 
           e.stopPropagation(); 
           const [mx] = d3.pointer(e, svg.node());
-          const clickedDayRaw = Math.round(xScale.invert(mx));
-          const clickedDay = Math.max(d.start, Math.min(d.end, clickedDayRaw));
+          const clickedDay = Math.max(d.start, Math.min(d.end, Math.round(xScale.invert(mx))));
           openCommentModal(lane, clickedDay, d.name || d.type); 
-        });
+      });
         
-      g.append("rect").attr("x", xScale(d.start)).attr("width", width).attr("y", y).attr("height", barHeight).attr("rx", 3).attr("fill", fill).attr("stroke", "white").attr("stroke-width", 1);
-      if (width > 30) g.append("text").attr("x", xScale(d.start) + 4).attr("y", y + 9).attr("font-size", "9px").attr("fill", "white").style("pointer-events", "none").style("font-weight", "600").text(d.name || d.type);
-    });
-  }
-
-  function drawDosing(svg, x, h, lane) {
-    const daily = [];
-    for(let i=0; i<=140; i++) { let sum = 0; clinicalData.meds.forEach(m => { if(i >= m.start && i <= m.end) sum += m.amt; }); daily.push({ d: i, v: sum }); }
-    const max = d3.max(daily, d=>d.v);
-    const colorScale = d3.scaleLinear().domain([0, max]).range(["#f5f5f7", "#1d1d1f"]);
-    
-    daily.forEach((day) => { 
-      const w = x(Math.min(day.d+1, 140)) - x(day.d); 
-      svg.append("rect")
-         .attr("x", x(day.d))
-         .attr("y", 4)
-         .attr("width", w)
-         .attr("height", h-8)
-         .attr("fill", colorScale(day.v))
-         .attr("rx", 2)
-         .attr("class", "clickable-point")
-         .on("click", (e) => {
-           e.stopPropagation();
-           openCommentModal(lane, day.d, "Dosing");
-         }); 
-    });
-  }
-
-  function drawECG(svg, ySvg, x, h, lane) {
-    const color = getLineColor(0);
-    const min = d3.min(ecgData, d=>d.v); const max = d3.max(ecgData, d=>d.v);
-    const y = d3.scaleLinear().domain([min-20, max+20]).range([h-6, 6]);
-    const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
-    svg.append("path").datum(ecgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none");
-    
-    svg.selectAll(".dot-ecg").data(ecgData).enter().append("circle")
-      .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 3)
-      .attr("fill", "#fff").attr("stroke", color).attr("stroke-width", 1.5)
-      .attr("class", "clickable-point")
-      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, "QTcF"); });
+      g.append("rect").attr("x", drawStartX).attr("width", drawWidth).attr("y", y).attr("height", barHeight).attr("rx", 3).attr("fill", fill).attr("stroke", "white").attr("stroke-width", 1);
       
-    [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); });
+      if (drawWidth > 30) {
+          g.append("text").attr("x", drawStartX + 4).attr("y", y + 9).attr("font-size", "9px").attr("fill", "white").style("pointer-events", "none").style("font-weight", "600").text(d.name || d.type);
+      }
+      if (d.ongoing) {
+          g.append("text").attr("x", Math.min(endX, 796) - 2).attr("y", y + 10).attr("font-size", "11px").attr("fill", "white").attr("text-anchor", "end").style("pointer-events", "none").text("→");
+      }
+    });
+  }
+
+  function drawDosing(svg, xScale, h, lane) {
+    if(!dosingData || dosingData.length === 0) return;
+    const max = d3.max(dosingData, d=>d.v);
+    const colorScale = d3.scaleLinear().domain([0, max]).range(["#e5e5ea", "#1d1d1f"]);
+    
+    for(let i=0; i<dosingData.length; i++) {
+        const curr = dosingData[i];
+        const next = dosingData[i+1];
+        const endD = next ? next.d : maxDay;
+
+        // Allow >= 0 so that 0 mg intervals are rendered
+        if (curr.v >= 0 && endD > curr.d) {
+            const startX = xScale(curr.d);
+            const endX = xScale(endD);
+            const drawStartX = Math.max(0, startX);
+            const drawWidth = Math.max(endX - drawStartX, 2);
+
+            if (endX < 0) continue;
+
+            const isZero = curr.v === 0;
+
+            svg.append("rect")
+                .attr("x", drawStartX)
+                .attr("y", 4)
+                .attr("width", drawWidth)
+                .attr("height", h-8)
+                .attr("fill", isZero ? "#ffffff" : colorScale(curr.v))
+                .attr("stroke", isZero ? "#d2d2d7" : "none")
+                .attr("stroke-width", isZero ? 1 : 0)
+                .attr("rx", 2)
+                .attr("class", "clickable-point")
+                .on("click", (e) => {
+                  e.stopPropagation();
+                  const [mx] = d3.pointer(e, svg.node());
+                  const clickedDay = Math.max(curr.d, Math.min(endD, Math.round(xScale.invert(mx))));
+                  openCommentModal(lane, clickedDay, "Dosing");
+                });
+        }
+    }
+  }
+
+  function drawECG(svg, ySvg, xScale, h, lane) {
+    if(!ecgData || ecgData.length === 0) return;
+    
+    // NULL ACCOUNTING
+    const validData = ecgData.filter(d => d.v !== null && !isNaN(d.v));
+    if(validData.length === 0) return;
+
+    const color = getLineColor(0);
+    let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
+    
+    // ZERO VARIANCE ACCOUNTING
+    if(min === max) { min -= 10; max += 10; }
+
+    const y = d3.scaleLinear().domain([min, max]).range([h-6, 6]);
+    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+    
+    svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none");
+    
+    svg.selectAll(".dot-ecg").data(validData).enter().append("circle").attr("cx", d => xScale(d.d)).attr("cy", d => y(d.v)).attr("r", d => d.clinsig ? 5 : 3.5).attr("fill", d => d.clinsig ? color : "#fff").attr("stroke", color).attr("stroke-width", 1.5).attr("class", "clickable-point").on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, "QTcF"); });
+      
+    [Math.floor(min), Math.ceil(max)].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); });
     ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", h/2 + 10).text("msec").style("opacity", 0.5);
   }
 
-  function drawVitals(svg, ySvg, x, lane) {
-    const vData = vitalTestData[lane.vitalName];
-    const min = d3.min(vData.data, d=>d.v); const max = d3.max(vData.data, d=>d.v);
-    const y = d3.scaleLinear().domain([min - (min*0.05), max + (max*0.05)]).range([lane.height-6, 6]);
-    const line = d3.line().x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
-    svg.append("path").datum(vData.data).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+  function drawVitals(svg, ySvg, xScale, lane) {
+    const vData = vitalTestData[lane.vitalName]; if(!vData) return;
     
-    // Hit targets
-    svg.selectAll(".dot-vital").data(vData.data).enter().append("circle")
-      .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", 4)
-      .attr("fill", "transparent").attr("stroke", "transparent")
+    // NULL ACCOUNTING
+    const validData = vData.data.filter(d => d.v !== null && !isNaN(d.v));
+    if(validData.length === 0) return;
+
+    let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
+    
+    // ZERO VARIANCE ACCOUNTING
+    if(min === max) { min -= (min*0.05); max += (max*0.05); }
+
+    const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
+    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
+    
+    svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+    
+    // Conditionally fill circle if clinsig is true, otherwise draw a white ring
+    svg.selectAll(".dot-vital").data(validData).enter().append("circle")
+      .attr("cx", d => xScale(d.d)).attr("cy", d => y(d.v))
+      .attr("r", d => d.clinsig ? 5 : 3.5)
+      .attr("fill", d => d.clinsig ? vData.color : "#fff")
+      .attr("stroke", vData.color).attr("stroke-width", 1.5)
       .attr("class", "clickable-point")
       .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, lane.vitalName); });
       
     [Math.floor(min), Math.ceil(max)].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v); });
   }
 
-  function drawLabs(svg, ySvg, x, lane) {
-    const h = lane.height;
-    let globalMin = Infinity, globalMax = -Infinity;
-    lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); });
+  function drawLabs(svg, ySvg, xScale, lane) {
+    const h = lane.height; let globalMin = Infinity, globalMax = -Infinity;
+    
+    // NULL ACCOUNTING IN SCALES
+    lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing && d.v !== null) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); });
     if (globalMin === Infinity) return;
+    
+    // ZERO VARIANCE ACCOUNTING
+    if (globalMin === globalMax) { globalMin -= (globalMin*0.1); globalMax += (globalMax*0.1); }
+
     const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-6, 6]);
+    
     lane.tests.forEach((tName, index) => {
       const tData = labTestData[tName]; if(!tData) return;
       const color = getLineColor(index);
-      const line = d3.line().defined(d => !d.missing).x(d=>x(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+      
+      // NULL ACCOUNTING IN PATH
+      const line = d3.line().defined(d => !d.missing && d.v !== null).x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
       svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
       
       tData.data.forEach((d, i) => {
         if (d.missing && i > 0 && i < tData.data.length - 1) {
           const prev = tData.data[i-1]; const next = tData.data[i+1];
-          if (!prev.missing && !next.missing) svg.append("line").attr("x1", x(prev.d)).attr("y1", y(prev.v)).attr("x2", x(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
+          // NULL ACCOUNTING IN MISSING DATA CONNECTOR
+          if (!prev.missing && !next.missing && prev.v !== null && next.v !== null) {
+              svg.append("line").attr("x1", xScale(prev.d)).attr("y1", y(prev.v)).attr("x2", xScale(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
+          }
         }
       });
       
-      svg.selectAll(`.dot-${tName}`).data(tData.data.filter(d => !d.missing)).enter().append("circle")
-        .attr("cx", d => x(d.d)).attr("cy", d => y(d.v)).attr("r", d => d.clinsig ? 5 : 3.5)
-        .attr("fill", d => d.clinsig ? color : "#fff")
-        .attr("stroke", color).attr("stroke-width", 1.5)
-        .attr("class", "clickable-point")
-        .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, tName); });
+      // SANITIZE CLASS NAME FOR CSS DOM PARSER
+      const safeName = getSafeClassName(tName);
+      svg.selectAll(`.dot-${safeName}`).data(tData.data.filter(d => !d.missing && d.v !== null)).enter().append("circle")
+        .attr("cx", d => xScale(d.d)).attr("cy", d => y(d.v)).attr("r", d => d.clinsig ? 5 : 3.5)
+        .attr("fill", d => d.clinsig ? color : "#fff").attr("stroke", color).attr("stroke-width", 1.5)
+        .attr("class", "clickable-point").on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, tName); });
     });
+    
     [globalMin, globalMax].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v.toFixed(1)); });
   }
 
@@ -1123,7 +1183,7 @@
       const graphX = mx - 160;
       if(graphX < 0) { cursor.style("display","none"); tooltip.style("display","none"); return; }
       const day = Math.round(xScale.invert(graphX));
-      if(day < 0 || day > 140) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
+      if(day < minDay || day > maxDay) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
       cursor.style("display", "block").style("left", graphX + "px");
 
       let html = `<div class="tt-head"><span class="tt-day">Day ${day}</span><span class="tt-day-sub">Week ${Math.floor(day/7)}</span></div><div class="tt-body">`;
@@ -1135,42 +1195,65 @@
 
         if (lane.id === 'addv') {
           secTitle = "Deviations";
-          const dev = clinicalData.addv.find(d => d.day === day);
-          if(dev) {
-            chipsHtml = dev.details.map(d => `<div class="chip chip-dev"><span class="chip-val">${d}</span></div>`).join("");
+          if(clinicalData.addv) {
+              const dev = clinicalData.addv.find(d => d.day === day);
+              if(dev) {
+                const detailsArray = Array.isArray(dev.details) ? dev.details : [dev.details];
+                chipsHtml = detailsArray.map(d => `<div class="chip chip-dev"><span class="chip-val">${d}</span></div>`).join("");
+              }
           }
         } 
         else if (lane.id === 'dosing') {
-          secTitle = "Study Drug";
-          let dose = 0; 
-          clinicalData.meds.forEach(m => { if(day>=m.start && day<=m.end) dose+=m.amt; });
-          if(dose>0) {
-            chipsHtml = `<div class="study-dose"><span class="study-dose-label">Total Dose</span><span class="study-dose-val">${dose}</span><span class="study-dose-unit">mg</span></div>`;
-          }
-        }
+          secTitle = "Study Drug";
+          let activeDose = getActiveDoseAtDay(day);
+          if(activeDose && activeDose.v >= 0) { 
+            chipsHtml = `<div class="study-dose"><span class="study-dose-label">Active Dose</span><span class="study-dose-val">${activeDose.v}</span><span class="study-dose-unit">${activeDose.unit}</span></div>`;
+          }
+        }
         else if (lane.id === 'conmeds') {
           secTitle = "ConMeds";
-          clinicalData.meds.forEach(m => { 
-            if(day>=m.start && day<=m.end) { 
-              chipsHtml += `<div class="chip"><span class="chip-name">${m.name}</span><span class="chip-val">${m.amt}</span><span class="chip-unit">mg</span></div>`; 
-            } 
-          });
-        }
-        else if (lane.id === 'ecg') {
-          secTitle = "ECG";
-          const ecgPt = ecgData.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-          if(Math.abs(ecgPt.d-day)<7) { 
-            chipsHtml = `<div class="chip"><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div>`; 
+          if(clinicalData.conmeds) {
+              clinicalData.conmeds.forEach(m => { 
+                if(day>=m.start && day<=m.end) { 
+                  chipsHtml += `<div class="chip"><span class="chip-name">${m.name}</span><span class="chip-val">${m.amt}</span><span class="chip-unit">${m.unit}</span></div>`; 
+                } 
+              });
           }
         }
+else if (lane.id === 'ecg') {
+          secTitle = "ECG";
+          if(ecgData && ecgData.length > 0) {
+            const validEcg = ecgData.filter(d => d.v !== null && !isNaN(d.v));
+            if(validEcg.length > 0) {
+                const ecgPt = validEcg.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+                if(Math.abs(ecgPt.d-day) <= 14) { 
+                  if (ecgPt.clinsig) {
+                    chipsHtml = `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:#1d1d1f"></span><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div><span class="chip-flag">Alert</span></div>`;
+                  } else {
+                    chipsHtml = `<div class="chip"><span class="chip-dot" style="background:#1d1d1f"></span><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div>`; 
+                  }
+                }
+            }
+          }
+        }
         else if (lane.type === 'vital') {
           secTitle = lane.title;
           const v = lane.vitalName;
           const d = vitalTestData[v]; 
-          const pt = d.data.find(p => p.d === day); 
-          if(pt) { 
-            let sName = v.replace("Heart Rate", "HR").replace("Temperature", "Temp").replace("Systolic BP", "Sys BP").replace("Diastolic BP", "Dia BP");
-            chipsHtml = `<div class="chip"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit}</span></div>`; 
+          if(d && d.data && d.data.length > 0) {
+              const validVitals = d.data.filter(p => p.v !== null && !isNaN(p.v));
+              if(validVitals.length > 0) {
+                  const pt = validVitals.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p); 
+                  if(Math.abs(pt.d-day) <= 14) { 
+                    let sName = v.replace("Heart Rate", "HR").replace("Temperature", "Temp").replace("Systolic Blood Pressure", "Sys BP").replace("Diastolic Blood Pressure", "Dia BP");
+                    
+                    if (pt.clinsig) {
+                        chipsHtml = `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit || ""}</span></div><span class="chip-flag">Alert</span></div>`;
+                    } else {
+                        chipsHtml = `<div class="chip"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit || ""}</span></div>`; 
+                    }
+                  }
+              }
           }
         }
         else if (lane.type === 'lab') {
@@ -1178,32 +1261,41 @@
           lane.tests.forEach((tName, idx) => {
             const data = labTestData[tName]; 
             const color = getLineColor(idx);
-            const pt = data.data.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-            if(Math.abs(pt.d-day)<10) {
-              let sName = tName.replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr");
-              if(pt.missing) { 
-                chipsHtml += `<div class="chip chip-missing"><span class="chip-dot" style="background:${color}; opacity:0.4"></span><span class="chip-name">${sName}</span><span class="chip-val">—</span></div>`; 
-              } else if(pt.clinsig) { 
-                chipsHtml += `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div><span class="chip-flag">${pt.comment || "Alert"}</span></div>`; 
-              } else { 
-                chipsHtml += `<div class="chip"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div>`; 
-              }
+            if(data && data.data && data.data.length > 0) {
+                const validLabs = data.data.filter(p => p.v !== null || p.missing);
+                if(validLabs.length > 0) {
+                    const pt = validLabs.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+                    if(Math.abs(pt.d-day) <= 14) {
+                      let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive Protein", "hs-CRP");
+                      
+                      if(pt.missing) { 
+                        chipsHtml += `<div class="chip chip-missing"><span class="chip-dot" style="background:${color}; opacity:0.4"></span><span class="chip-name">${sName}</span><span class="chip-val">—</span></div>`; 
+                      } else if(pt.clinsig) { 
+                        chipsHtml += `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div><span class="chip-flag">${pt.comment || "Alert"}</span></div>`; 
+                      } else { 
+                        chipsHtml += `<div class="chip"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div>`; 
+                      }
+                    }
+                }
             }
           });
         }
         else if (lane.id === 'ae') {
           secTitle = "Adverse Events";
-          clinicalData.ae.forEach(a => { 
-            if(day>=a.start && day<=a.end) { 
-              let sevClass = a.severity === "High" ? "ae-high" : a.severity === "Medium" ? "ae-med" : "ae-low";
-              chipsHtml += `<div class="chip ${sevClass}"><span class="chip-val">${a.type}</span></div>`; 
-            } 
-          });
+          if(clinicalData.ae) {
+              clinicalData.ae.forEach(a => { 
+                if(day>=a.start && day<=a.end) { 
+                  let sevIdx = severityVector.indexOf(a.severity);
+                  let sevClass = `ae-idx-${sevIdx !== -1 ? sevIdx : 0}`;
+                  chipsHtml += `<div class="chip ${sevClass}"><span class="chip-val">${a.type}</span></div>`; 
+                } 
+              });
+          }
         }
 
         if(chipsHtml) {
           let headerText = secTitle;
-          if (lane.id === 'addv') {
+          if (lane.id === 'addv' && clinicalData.addv) {
                const dev = clinicalData.addv.find(d => d.day === day);
                if (dev) headerText += ` (${dev.count})`;
           }
@@ -1230,7 +1322,8 @@
     }).on("mouseleave", () => { cursor.style("display", "none"); tooltip.style("display", "none"); });
   }
 
-  init();
+  // Ignite App
+  initApp();
 </script>
 </body>
 </html>
