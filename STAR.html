@@ -87,8 +87,6 @@
     .lane-comment-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
     .lane-warning-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(255, 149, 0, 0.15); color: var(--alert-amber); border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
     .lane-missing-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
-    
-    /* NEW: NEW AND CHANGED BADGES */
     .lane-new-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(48, 209, 171, 0.15); color: #008a68; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
     .lane-changed-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(175, 82, 222, 0.15); color: #8e24aa; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
 
@@ -116,18 +114,29 @@
     .sec { display: flex; flex-direction: column; gap: 5px; }
     .sec-head { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #c7c7cc; }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    
     .chip { display: inline-flex; align-items: center; gap: 5px; background: #f5f5f7; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; line-height: 1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .chip-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .chip-name { font-size: 10px; font-weight: 500; color: #86868b; overflow: hidden; text-overflow: ellipsis; }
     .chip-val { font-size: 11px; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; }
     .chip-unit { font-size: 9.5px; font-weight: 400; color: #aeaeb2; }
+    
     .study-dose { display: inline-flex; align-items: baseline; gap: 3px; background: #eef7ff; border-radius: 5px; padding: 3px 7px; border: 1px solid rgba(0,113,227,0.15); }
     .study-dose-label { font-size: 9.5px; font-weight: 600; color: #0071e3; text-transform: uppercase; letter-spacing: 0.04em; }
     .study-dose-val { font-size: 12px; font-weight: 700; color: #0071e3; font-variant-numeric: tabular-nums; }
     .study-dose-unit { font-size: 9.5px; color: rgba(0,113,227,0.6); }
+    
     .chip.chip-missing { background: #fff0ef; border-color: rgba(255,59,48,0.15); }
     .chip.chip-missing .chip-name { color: #ff3b30; }
     .chip.chip-missing .chip-val { color: #ff3b30; font-style: italic; font-weight: 500; }
+    
+    .chip.chip-new { background: #e6f9f4; border-color: rgba(48, 209, 171, 0.3); }
+    .chip.chip-new .chip-val { color: #008a68; }
+    
+    .chip.chip-changed { background: #f4eafe; border-color: rgba(175, 82, 222, 0.3); }
+    .chip.chip-changed .chip-val { color: #8e24aa; }
+
     .chip.chip-alert { background: #fff8f0; border-color: rgba(255,149,0,0.3); padding: 4px 8px 4px 7px; gap: 0; flex-direction: column; align-items: flex-start; }
     .chip.chip-alert .chip-top { display: flex; align-items: center; gap: 5px; }
     .chip.chip-alert .chip-val { color: #1d1d1f; }
@@ -302,10 +311,10 @@
       ]
     },
     "vitalOptions": [
-      { "name": "Diastolic Blood Pressure", "unit": "mmHg", "color": "#FF9500" },
-      { "name": "Heart Rate", "unit": "beats/min", "color": "#AF52DE" },
-      { "name": "Systolic Blood Pressure", "unit": "mmHg", "color": "#007AFF" },
-      { "name": "Temperature", "unit": "F", "color": "#34C759" }
+      { "name": "Diastolic Blood Pressure", "unit": "mmHg" },
+      { "name": "Heart Rate", "unit": "beats/min" },
+      { "name": "Systolic Blood Pressure", "unit": "mmHg" },
+      { "name": "Temperature", "unit": "F" }
     ],
     "labTestData": {
       "Alanine Aminotransferase (U/L)": { "unit": "U/L", "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false, "isChanged": true}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] },
@@ -317,11 +326,10 @@
       ] }
     },
     "vitalTestData": {
-      "Diastolic Blood Pressure": { "unit": "mmHg", "color": "#FF9500", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false, "isNew": true}, {"d": 183, "v": 84, "clinsig": false} ] },
-      "Heart Rate": { "unit": "beats/min", "color": "#AF52DE", "data": [ {"d": -49, "v": 83, "clinsig": false}, {"d": 0, "v": 84, "clinsig": false}, {"d": 14, "v": 92, "clinsig": false}, {"d": 183, "v": 89, "clinsig": false} ] },
+      "Diastolic Blood Pressure": { "unit": "mmHg", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false, "isNew": true}, {"d": 183, "v": 84, "clinsig": false} ] },
+      "Heart Rate": { "unit": "beats/min", "data": [ {"d": -49, "v": 83, "clinsig": false}, {"d": 0, "v": 84, "clinsig": false}, {"d": 14, "v": 92, "clinsig": false}, {"d": 183, "v": 89, "clinsig": false} ] },
       "Temperature": { 
         "unit": "F", 
-        "color": "#34C759", 
         "data": [ 
           {"d": -49, "v": 97.6, "clinsig": false}, 
           {"d": 0, "v": 97.5, "clinsig": false}, 
@@ -369,14 +377,14 @@
       ]
     },
     "vitalOptions": [
-      { "name": "Heart Rate", "unit": "beats/min", "color": "#AF52DE" }
+      { "name": "Heart Rate", "unit": "beats/min" }
     ],
     "labTestData": {
       "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -10, "v": 44, "missing": false, "clinsig": false}, {"d": 30, "v": 45, "missing": false, "clinsig": false}, {"d": 120, "v": 43, "missing": false, "clinsig": false} ] },
       "Creatinine (umol/L)": { "unit": "umol/L", "data": [ {"d": -10, "v": 48, "missing": false, "clinsig": false}, {"d": 30, "v": 49, "missing": false, "clinsig": false}, {"d": 120, "v": 52, "missing": false, "clinsig": false} ] }
     },
     "vitalTestData": {
-      "Heart Rate": { "unit": "beats/min", "color": "#AF52DE", "data": [ {"d": -10, "v": 72, "clinsig": true}, {"d": 30, "v": 75, "clinsig": false}, {"d": 120, "v": 74, "clinsig": false} ] }
+      "Heart Rate": { "unit": "beats/min", "data": [ {"d": -10, "v": 72, "clinsig": true}, {"d": 30, "v": 75, "clinsig": false}, {"d": 120, "v": 74, "clinsig": false} ] }
     },
     "dosingData": [
       {"d": 1, "v": 0, "unit": "mg"},
@@ -477,11 +485,9 @@
     minDay = allDays.length > 0 ? Math.min(0, d3.min(allDays)) : 0;
 
     // --- ADD THIS BUFFER LOGIC ---
-    // Adds a 5% margin to the sides (or at least 7 days) so dots aren't cut off
     let rangeBuffer = Math.max(7, (maxDay - minDay) * 0.05);
     minDay = Math.floor(minDay - rangeBuffer);
     maxDay = Math.ceil(maxDay + rangeBuffer);
-    // -----------------------------
 
     severityVector = metadata.ae_severity_levels || ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
     severityScaler = createOrdinalColorScale(severityVector);
@@ -613,7 +619,6 @@
       lane.tests.forEach(tName => {
         const tData = labTestData[tName];
         if (tData) {
-          // Includes records even if they are marked as missing so users can attach comments
           const pt = tData.data.find(d => d.d === day && (d.v !== null || d.missing));
           if (pt) items.add(tName);
         }
@@ -621,7 +626,6 @@
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData) {
-        // Updated to allow comments on missing vitals
         const pt = vData.data.find(d => d.d === day && (d.v !== null || d.missing));
         if (pt) items.add(lane.vitalName);
       }
@@ -633,7 +637,6 @@
       let dPt = dosingData.find(m => m.d === day && m.v >= 0); 
       if (dPt) items.add("Dosing");
     } else if (lane.type === 'ecg') {
-      // Updated to allow comments on missing ECGs
       const pt = ecgData.find(d => d.d === day && (d.v !== null || d.missing));
       if (pt) items.add("QTcF");
     } else if (lane.type === 'addv') {
@@ -807,6 +810,29 @@
       ecgData.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
     }
     return Array.from(daysMap.keys()).map(day => ({ day }));
+  }
+
+  // --- GENERIC TOOLTIP BUILDER ---
+  function buildTooltipChip(pt, name, unit, color) {
+      const iconMissing = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
+      const iconNew = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+      const iconChanged = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.21l-3.11 3.11"></path></svg>';
+      
+      let valStr = pt.v !== null ? pt.v : "";
+      let unitStr = unit ? `<span class="chip-unit">${unit}</span>` : "";
+
+      // Prioritize the visual state if multiple exist
+      if (pt.missing) {
+          return `<div class="chip chip-missing"><span class="chip-icon" style="color:#ff3b30;">${iconMissing}</span><span class="chip-name">${name}</span><span class="chip-val">Missing</span></div>`;
+      } else if (pt.isNew) {
+          return `<div class="chip chip-new"><span class="chip-icon" style="color:#008a68;">${iconNew}</span><span class="chip-name">${name}</span><span class="chip-val">${valStr}</span>${unitStr}</div>`;
+      } else if (pt.isChanged) {
+          return `<div class="chip chip-changed"><span class="chip-icon" style="color:#8e24aa;">${iconChanged}</span><span class="chip-name">${name}</span><span class="chip-val">${valStr}</span>${unitStr}</div>`;
+      } else if (pt.clinsig) {
+          return `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${name}</span><span class="chip-val">${valStr}</span>${unitStr}</div><span class="chip-flag">${pt.comment || "Alert"}</span></div>`;
+      } else {
+          return `<div class="chip"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${name}</span><span class="chip-val">${valStr}</span>${unitStr}</div>`;
+      }
   }
 
   // --- COMMENT STRIP RENDERER ---
@@ -1243,7 +1269,7 @@
     for(let i=0; i<dosingData.length; i++) {
         const curr = dosingData[i];
         const next = dosingData[i+1];
-        const endD = next ? next.d : trueMaxDay; // Uses original max visit, keeps heatmap off buffer!
+        const endD = next ? next.d : trueMaxDay;
 
         if (curr.v >= 0 && endD > curr.d) {
             const startX = xScale(curr.d);
@@ -1278,14 +1304,12 @@
   function drawECG(svg, ySvg, xScale, h, lane) {
     if(!ecgData || ecgData.length === 0) return;
     
-    // NULL ACCOUNTING
     const validData = ecgData.filter(d => d.v !== null && !isNaN(d.v));
     if(validData.length === 0) return;
 
     const color = getLineColor(0);
     let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
     
-    // ZERO VARIANCE ACCOUNTING
     if(min === max) { min -= 10; max += 10; }
 
     const y = d3.scaleLinear().domain([min, max]).range([h-6, 6]);
@@ -1303,7 +1327,6 @@
       .attr("class", "clickable-point")
       .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, "QTcF"); });
       
-    // FIX: Using exact min and max properly formatted instead of floor/ceil for tight decimal ranges
     [min, max].forEach(v => { 
         ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(Number.isInteger(v) ? v : v.toFixed(1)); 
     });
@@ -1312,31 +1335,31 @@
   function drawVitals(svg, ySvg, xScale, lane) {
     const vData = vitalTestData[lane.vitalName]; if(!vData) return;
     
-    // NULL ACCOUNTING
     const validData = vData.data.filter(d => d.v !== null && !isNaN(d.v));
     if(validData.length === 0) return;
 
     let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
     
-    // ZERO VARIANCE ACCOUNTING
     if(min === max) { min -= (min*0.05); max += (max*0.05); }
 
     const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
     const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
     
-    svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", vData.color).attr("stroke-width", 2).style("pointer-events", "none");
+    const vitalBlack = "#1d1d1f";
+
+    svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", vitalBlack).attr("stroke-width", 2).style("pointer-events", "none");
     
+    // Always fill in with black per request
     svg.selectAll(".dot-vital").data(validData).enter().append("circle")
       .attr("cx", d => xScale(d.d))
       .attr("cy", d => y(d.v))
       .attr("r", 3.5)
-      .attr("fill", vData.color)
-      .attr("stroke", vData.color)
+      .attr("fill", vitalBlack)
+      .attr("stroke", vitalBlack)
       .attr("stroke-width", 1.5)
       .attr("class", "clickable-point")
       .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, lane.vitalName); });
       
-    // FIX: Using exact min and max properly formatted instead of floor/ceil for tight decimal ranges
     [min, max].forEach(v => { 
         ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(Number.isInteger(v) ? v : v.toFixed(1)); 
     });
@@ -1345,11 +1368,9 @@
   function drawLabs(svg, ySvg, xScale, lane) {
     const h = lane.height; let globalMin = Infinity, globalMax = -Infinity;
     
-    // NULL ACCOUNTING IN SCALES
     lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing && d.v !== null) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); });
     if (globalMin === Infinity) return;
     
-    // ZERO VARIANCE ACCOUNTING
     if (globalMin === globalMax) { globalMin -= (globalMin*0.1); globalMax += (globalMax*0.1); }
 
     const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-6, 6]);
@@ -1358,21 +1379,18 @@
       const tData = labTestData[tName]; if(!tData) return;
       const color = getLineColor(index);
       
-      // NULL ACCOUNTING IN PATH
       const line = d3.line().defined(d => !d.missing && d.v !== null).x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
       svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
       
       tData.data.forEach((d, i) => {
         if (d.missing && i > 0 && i < tData.data.length - 1) {
           const prev = tData.data[i-1]; const next = tData.data[i+1];
-          // NULL ACCOUNTING IN MISSING DATA CONNECTOR
           if (!prev.missing && !next.missing && prev.v !== null && next.v !== null) {
               svg.append("line").attr("x1", xScale(prev.d)).attr("y1", y(prev.v)).attr("x2", xScale(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
           }
         }
       });
       
-      // SANITIZE CLASS NAME FOR CSS DOM PARSER
       const safeName = getSafeClassName(tName);
       svg.selectAll(`.dot-${safeName}`).data(tData.data.filter(d => !d.missing && d.v !== null)).enter().append("circle")
         .attr("cx", d => xScale(d.d))
@@ -1460,13 +1478,7 @@
             if(validEcg.length > 0) {
                 const ecgPt = validEcg.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
                 if(Math.abs(ecgPt.d-day) <= 14) { 
-                  if (ecgPt.missing) {
-                    chipsHtml = `<div class="chip chip-missing"><span class="chip-dot" style="background:#1d1d1f; opacity:0.4"></span><span class="chip-name">QTcF</span><span class="chip-val">—</span></div>`;
-                  } else if (ecgPt.clinsig) {
-                    chipsHtml = `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:#1d1d1f"></span><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div><span class="chip-flag">Alert</span></div>`;
-                  } else {
-                    chipsHtml = `<div class="chip"><span class="chip-dot" style="background:#1d1d1f"></span><span class="chip-name">QTcF</span><span class="chip-val">${ecgPt.v}</span><span class="chip-unit">ms</span></div>`; 
-                  }
+                  chipsHtml = buildTooltipChip(ecgPt, "QTcF", "ms", "#1d1d1f");
                 }
             }
           }
@@ -1481,14 +1493,7 @@
                   const pt = validVitals.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p); 
                   if(Math.abs(pt.d-day) <= 14) { 
                     let sName = v.replace("Heart Rate", "HR").replace("Temperature", "Temp").replace("Systolic Blood Pressure", "Sys BP").replace("Diastolic Blood Pressure", "Dia BP");
-                    
-                    if (pt.missing) {
-                        chipsHtml = `<div class="chip chip-missing"><span class="chip-dot" style="background:${d.color}; opacity:0.4"></span><span class="chip-name">${sName}</span><span class="chip-val">—</span></div>`;
-                    } else if (pt.clinsig) {
-                        chipsHtml = `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit || ""}</span></div><span class="chip-flag">Alert</span></div>`;
-                    } else {
-                        chipsHtml = `<div class="chip"><span class="chip-dot" style="background:${d.color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${d.unit || ""}</span></div>`; 
-                    }
+                    chipsHtml = buildTooltipChip(pt, sName, d.unit || "", "#1d1d1f");
                   }
               }
           }
@@ -1504,14 +1509,7 @@
                     const pt = validLabs.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
                     if(Math.abs(pt.d-day) <= 14) {
                       let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive Protein", "hs-CRP");
-                      
-                      if(pt.missing) { 
-                        chipsHtml += `<div class="chip chip-missing"><span class="chip-dot" style="background:${color}; opacity:0.4"></span><span class="chip-name">${sName}</span><span class="chip-val">—</span></div>`; 
-                      } else if(pt.clinsig) { 
-                        chipsHtml += `<div class="chip chip-alert"><div class="chip-top"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div><span class="chip-flag">${pt.comment || "Alert"}</span></div>`; 
-                      } else { 
-                        chipsHtml += `<div class="chip"><span class="chip-dot" style="background:${color}"></span><span class="chip-name">${sName}</span><span class="chip-val">${pt.v}</span><span class="chip-unit">${data.unit}</span></div>`; 
-                      }
+                      chipsHtml += buildTooltipChip(pt, sName, data.unit, color);
                     }
                 }
             }
