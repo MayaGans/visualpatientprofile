@@ -82,12 +82,15 @@
 
     /* COMMENT STRIP */
     .comment-strip-row { display: flex; width: max-content; min-width: 100%; border-top: 1px solid #f0f0f5; }
-    .comment-strip-header { width: 160px; flex-shrink: 0; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 0 14px; height: var(--comment-strip-h); }
-    .lane-comment-badge { display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
-    .lane-warning-badge { display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(255, 149, 0, 0.15); color: var(--alert-amber); border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .comment-strip-header { width: 160px; flex-shrink: 0; background: #f9f9fa; border-right: 1px solid var(--divider); position: sticky; left: 0; z-index: 30; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px; padding: 2px 14px; min-height: var(--comment-strip-h); }
     
-    /* MISSING DATA BADGE */
-    .lane-missing-badge { display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-comment-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(0, 113, 227, 0.1); color: var(--accent-blue); border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-warning-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(255, 149, 0, 0.15); color: var(--alert-amber); border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-missing-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    
+    /* NEW: NEW AND CHANGED BADGES */
+    .lane-new-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(48, 209, 171, 0.15); color: #008a68; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+    .lane-changed-badge { display: flex; align-items: center; gap: 3px; padding: 2px 5px; background: rgba(175, 82, 222, 0.15); color: #8e24aa; border-radius: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
 
     .comment-strip-content { width: 800px; flex-shrink: 0; position: relative; height: var(--comment-strip-h); background: #fff; }
     .comment-strip-y-axis { width: 60px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--divider); position: sticky; right: 0; z-index: 30; height: var(--comment-strip-h); }
@@ -305,8 +308,8 @@
       { "name": "Temperature", "unit": "F", "color": "#34C759" }
     ],
     "labTestData": {
-      "Alanine Aminotransferase (U/L)": { "unit": "U/L", "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] },
-      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 48, "missing": false, "clinsig": false}, {"d": 0, "v": 46, "missing": false, "clinsig": false}, {"d": 183, "v": 42, "missing": false, "clinsig": false} ] },
+      "Alanine Aminotransferase (U/L)": { "unit": "U/L", "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false, "isChanged": true}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] },
+      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 48, "missing": false, "clinsig": false}, {"d": 0, "v": 46, "missing": false, "clinsig": false}, {"d": 183, "v": 42, "missing": false, "clinsig": false, "isNew": true} ] },
       "Hemoglobin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 170, "missing": false, "clinsig": false}, {"d": 0, "v": 159, "missing": false, "clinsig": false}, {"d": 183, "v": 157, "missing": false, "clinsig": false} ] },
       "Leukocytes": { "unit": "10^9/L", "data": [ 
       {"d": -49, "v": null, "missing": true, "clinsig": false}, 
@@ -314,7 +317,7 @@
       ] }
     },
     "vitalTestData": {
-      "Diastolic Blood Pressure": { "unit": "mmHg", "color": "#FF9500", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false}, {"d": 183, "v": 84, "clinsig": false} ] },
+      "Diastolic Blood Pressure": { "unit": "mmHg", "color": "#FF9500", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false, "isNew": true}, {"d": 183, "v": 84, "clinsig": false} ] },
       "Heart Rate": { "unit": "beats/min", "color": "#AF52DE", "data": [ {"d": -49, "v": 83, "clinsig": false}, {"d": 0, "v": 84, "clinsig": false}, {"d": 14, "v": 92, "clinsig": false}, {"d": 183, "v": 89, "clinsig": false} ] },
       "Temperature": { 
         "unit": "F", 
@@ -334,9 +337,9 @@
     ],
     "ecgData": [
       {"d": -49, "v": 410, "clinsig": false},
-      {"d": 0, "v": 415, "clinsig": false},
+      {"d": 0, "v": 415, "clinsig": false, "isChanged": true},
       {"d": 14, "v": 425, "clinsig": true},
-      {"d": 20, "v": 425, "clinsig": false, "missing": true, "clinsig": true},
+      {"d": 20, "v": 425, "clinsig": false, "missing": true},
       {"d": 183, "v": 420, "clinsig": false}
     ],
     "clinicalData": {
@@ -414,7 +417,7 @@
     "SRP-9001-SUBJ": {
       "dosing|Dosing|14": [{ id: 1, author: "Dr. Chen", body: "Dose escalated per protocol.", timestamp: new Date(Date.now() - 86400000) }],
       "ae|Rash of Right upper extremity|15": [{ id: 2, author: "Dr. Lee", body: "Patient reported localized itching.", timestamp: new Date(Date.now() - 3600000) }],
-      "ecg|ecg|20": [{ id: 3, author: "Dr. Lee", body: "This needs to be filled out", timestamp: new Date(Date.now() - 3600000) }]
+      "ecg|QTcF|20": [{ id: 3, author: "Dr. Lee", body: "This needs to be filled out", timestamp: new Date(Date.now() - 3600000) }]
     },
     "SRP-9002-SUBJ": {
       "ae|Fatigue|10": [{ id: 3, author: "Dr. Martinez", body: "Patient reported mild fatigue starting today.", timestamp: new Date(Date.now() - 7200000) }]
@@ -694,6 +697,38 @@
     return count;
   }
 
+  function getLaneNewCount(lane) {
+    let count = 0;
+    if (lane.type === 'lab') {
+      lane.tests.forEach(tName => {
+        const tData = labTestData[tName];
+        if (tData && tData.data) count += tData.data.filter(d => d.isNew).length;
+      });
+    } else if (lane.type === 'vital') {
+      const vData = vitalTestData[lane.vitalName];
+      if (vData && vData.data) count += vData.data.filter(d => d.isNew).length;
+    } else if (lane.id === 'ecg' && ecgData) {
+      count += ecgData.filter(d => d.isNew).length;
+    }
+    return count;
+  }
+
+  function getLaneChangedCount(lane) {
+    let count = 0;
+    if (lane.type === 'lab') {
+      lane.tests.forEach(tName => {
+        const tData = labTestData[tName];
+        if (tData && tData.data) count += tData.data.filter(d => d.isChanged).length;
+      });
+    } else if (lane.type === 'vital') {
+      const vData = vitalTestData[lane.vitalName];
+      if (vData && vData.data) count += vData.data.filter(d => d.isChanged).length;
+    } else if (lane.id === 'ecg' && ecgData) {
+      count += ecgData.filter(d => d.isChanged).length;
+    }
+    return count;
+  }
+
   function getMissingDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
@@ -714,7 +749,6 @@
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
 
-  // NEW: Gather unique days with clinsig flags across tests in this lane
   function getFlaggedDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
@@ -735,25 +769,81 @@
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
 
+  function getNewDaysForLane(lane) {
+    const daysMap = new Map();
+    if (lane.type === 'lab') {
+      lane.tests.forEach(tName => {
+        const tData = labTestData[tName];
+        if (tData && tData.data) {
+          tData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+        }
+      });
+    } else if (lane.type === 'vital') {
+      const vData = vitalTestData[lane.vitalName];
+      if (vData && vData.data) {
+        vData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+      }
+    } else if (lane.id === 'ecg' && ecgData) {
+      ecgData.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+    }
+    return Array.from(daysMap.keys()).map(day => ({ day }));
+  }
+
+  function getChangedDaysForLane(lane) {
+    const daysMap = new Map();
+    if (lane.type === 'lab') {
+      lane.tests.forEach(tName => {
+        const tData = labTestData[tName];
+        if (tData && tData.data) {
+          tData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+        }
+      });
+    } else if (lane.type === 'vital') {
+      const vData = vitalTestData[lane.vitalName];
+      if (vData && vData.data) {
+        vData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+      }
+    } else if (lane.id === 'ecg' && ecgData) {
+      ecgData.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+    }
+    return Array.from(daysMap.keys()).map(day => ({ day }));
+  }
+
   // --- COMMENT STRIP RENDERER ---
   function drawCommentStrip(container, lane, xScale) {
     const STRIP_H = 16;
     const commentedDays = getCommentedDaysForLane(lane).map(d => d.day);
     const missingDays = getMissingDaysForLane(lane).map(d => d.day);
     const flaggedDays = getFlaggedDaysForLane(lane).map(d => d.day);
+    const newDays = getNewDaysForLane(lane).map(d => d.day);
+    const changedDays = getChangedDaysForLane(lane).map(d => d.day);
 
     const stripRow = container.append("div").attr("class", "comment-strip-row");
     const headerDiv = stripRow.append("div").attr("class", "comment-strip-header");
     
-    // Check for missing data and place indicator
+    // NEW Data
+    const newCount = getLaneNewCount(lane);
+    if (newCount > 0) {
+        headerDiv.append("div").attr("class", "lane-new-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> ${newCount}`);
+    }
+
+    // CHANGED Data
+    const changedCount = getLaneChangedCount(lane);
+    if (changedCount > 0) {
+        headerDiv.append("div").attr("class", "lane-changed-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.21l-3.11 3.11"></path></svg> ${changedCount}`);
+    }
+
+    // MISSING Data
     const missingCount = getLaneMissingCount(lane);
     if (missingCount > 0) {
         headerDiv.append("div").attr("class", "lane-missing-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg> ${missingCount}`);
     }
 
+    // FLAGGED Data
     const warningCount = getLaneWarningCount(lane);
     if (warningCount > 0) headerDiv.append("div").attr("class", "lane-warning-badge").html(`<span>⚠</span> ${warningCount}`);
 
+    // COMMENTS
     const count = getLaneCommentCount(lane);
     if (count > 0) headerDiv.append("div").attr("class", "lane-comment-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg> ${count}`);
 
@@ -768,7 +858,7 @@
     });
 
     // Determine all active days needing a tick
-    const allDays = Array.from(new Set([...commentedDays, ...missingDays, ...flaggedDays]));
+    const allDays = Array.from(new Set([...commentedDays, ...missingDays, ...flaggedDays, ...newDays, ...changedDays]));
 
     allDays.forEach(day => {
         const cx = xScale(day);
@@ -776,9 +866,13 @@
             const isCommented = commentedDays.includes(day);
             const isMissing = missingDays.includes(day);
             const isFlagged = flaggedDays.includes(day);
+            const isNew = newDays.includes(day);
+            const isChanged = changedDays.includes(day);
 
             const activeTicks = [];
-            // Order determines visual stacking order
+            // Order determines visual stacking order left to right
+            if (isNew) activeTicks.push({ color: "#30D1AB", type: 'new' });
+            if (isChanged) activeTicks.push({ color: "#AF52DE", type: 'changed' });
             if (isMissing) activeTicks.push({ color: "#ff3b30", type: 'missing' });
             if (isFlagged) activeTicks.push({ color: "var(--alert-amber)", type: 'flagged' });
             if (isCommented) activeTicks.push({ color: "var(--comment-tick-color)", type: 'comment' });
