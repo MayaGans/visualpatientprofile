@@ -13,12 +13,71 @@
       --comment-strip-h: 16px; --comment-tick-color: #0071e3;
     }
     * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-app); margin: 0; padding: 20px; color: var(--text-main); -webkit-font-smoothing: antialiased; }
-    .main-container { width: 100%; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-    .card { background: var(--bg-panel); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); position: relative; }
-    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
+
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: var(--bg-app); 
+      margin: 0; 
+      padding: 20px; 
+      color: var(--text-main); 
+      -webkit-font-smoothing: antialiased;
+      height: 100vh;
+      overflow: hidden; 
+    }
     
-    /* PATIENT SELECTOR STYLING */
+    .main-container { 
+      width: 100%; 
+      max-width: 1000px; 
+      margin: 0 auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 16px; 
+      height: 100%; 
+    }
+    
+    .card { 
+      background: var(--bg-panel); 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+      overflow: hidden; 
+      border: 1px solid rgba(0,0,0,0.05); 
+      position: relative; 
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-panel);
+      flex-shrink: 0;
+    }
+    
+    .controls-container {
+      flex-shrink: 0;
+    }
+
+    .master-scroll-container { 
+      width: 100%; 
+      position: relative; 
+      background: #fff; 
+      border-bottom: 1px solid var(--divider); 
+      flex: 1;
+      overflow: auto;
+    }
+
+    #x-axis-lane {
+      position: sticky;
+      bottom: 0;
+      z-index: 45;
+      background: var(--bg-panel);
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+
     .subject-id-select {
         font-family: inherit; font-size: 16px; font-weight: 700; color: var(--text-main);
         background-color: transparent; border: none; padding-right: 18px; appearance: none;
@@ -64,7 +123,6 @@
     .btn-cancel { background: #e5e5ea; color: #333; }
     .btn-save { background: var(--accent-blue); color: white; }
 
-    .master-scroll-container { width: 100%; overflow-x: auto; position: relative; background: #fff; border-bottom: 1px solid var(--divider); }
     #global-interaction-layer { position: absolute; left: 160px; top: 0; width: 800px; z-index: 50; height: 100%; pointer-events: none; } 
     #global-cursor-line { position: absolute; top: 0; bottom: 0; width: 1px; background-color: var(--accent-blue); pointer-events: none; z-index: 40; display: none; left: 0; }
     
@@ -101,7 +159,6 @@
     .clickable-point { cursor: pointer; transition: all 0.1s; }
     .clickable-point:hover { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
 
-    /* MISSING DATA MESSAGE */
     .missing-data-message { padding: 12px 18px; background: #fafafa; font-size: 11px; color: #86868b; text-align: center; }
     .missing-data-message span { font-weight: 600; color: var(--text-main); }
 
@@ -238,16 +295,26 @@
         <div id="vitals-pills" class="pills-container hidden" style="margin-top:8px"></div>
         <div id="vitals-content" class="panel-content"><div class="test-grid" id="vitalsList"></div></div>
       </div>
+      
+      <div class="panel-row" id="ecg-panel-row">
+        <div class="panel-header" onclick="togglePicker('ecg')">
+          <span class="panel-title">ECG Parameters</span>
+          <span class="toggle-icon" id="toggle-label-ecg">Edit</span>
+        </div>
+        <div id="ecg-pills" class="pills-container hidden" style="margin-top:8px"></div>
+        <div id="ecg-content" class="panel-content"><div class="test-grid" id="ecgList"></div></div>
+      </div>
+
     </div>
 
     <div class="master-scroll-container" id="scroll-container">
       <div id="global-interaction-layer"><div id="global-cursor-line"></div></div>
       <div id="viz-root"></div>
-      <div class="lane" style="height: 35px; border-bottom: none;">
-        <div class="lane-header" style="background: white; border-right: 1px solid #e5e5ea;"></div>
-        <div class="lane-content" id="x-axis-container" style="height: 35px;"></div>
-        <div class="lane-y-axis" style="border-left: 1px solid #e5e5ea;"></div>
-      </div>
+          <div class="lane" id="x-axis-lane" style="height: 35px; border-bottom: none;">
+  <div class="lane-header" style="background: white; border-right: 1px solid #e5e5ea; z-index: 50;"></div>
+  <div class="lane-content" id="x-axis-container" style="height: 35px; background: white;"></div>
+  <div class="lane-y-axis" style="background: white; border-left: 1px solid #e5e5ea; z-index: 50;"></div>
+</div>
     </div>
     
     <div id="missing-data-message" class="missing-data-message hidden"></div>
@@ -298,6 +365,7 @@
     },
     "defaultTests": {
       "Chemistry": [
+        { "name": "Bilirubin (umol/L)", "unit": "umol/L" },
         { "name": "Alanine Aminotransferase (U/L)", "unit": "U/L" },
         { "name": "Aspartate Aminotransferase (U/L)", "unit": "U/L" },
         { "name": "Alkaline Phosphatase (U/L)", "unit": "U/L" },
@@ -316,14 +384,48 @@
       { "name": "Systolic Blood Pressure", "unit": "mmHg" },
       { "name": "Temperature", "unit": "F" }
     ],
+    "ecgOptions": [
+      { "name": "QTcF", "unit": "ms" },
+      { "name": "PR Interval", "unit": "ms" }
+    ],
     "labTestData": {
-      "Alanine Aminotransferase (U/L)": { "unit": "U/L", "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false, "isChanged": true}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] },
-      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 48, "missing": false, "clinsig": false}, {"d": 0, "v": 46, "missing": false, "clinsig": false}, {"d": 183, "v": 42, "missing": false, "clinsig": false, "isNew": true} ] },
-      "Hemoglobin (g/L)": { "unit": "g/L", "data": [ {"d": -49, "v": 170, "missing": false, "clinsig": false}, {"d": 0, "v": 159, "missing": false, "clinsig": false}, {"d": 183, "v": 157, "missing": false, "clinsig": false} ] },
-      "Leukocytes": { "unit": "10^9/L", "data": [ 
-      {"d": -49, "v": null, "missing": true, "clinsig": false}, 
-      {"d": 0, "v": null, "missing": true, "clinsig": false}
-      ] }
+      "Bilirubin (umol/L)": { 
+        "unit": "umol/L",
+        "ref": {"lo": 5, "hi": 21},
+        "data": [ 
+          {"d": -49, "v": 15, "missing": false, "clinsig": false},
+          {"d": -49, "v": 12, "missing": false, "clinsig": false},
+          {"d": -49, "v": 14, "missing": false, "clinsig": false, "avg": true},
+          {"d": 0, "v": 19, "missing": false, "clinsig": false},
+          {"d": 0, "v": 25, "missing": false, "clinsig": true, "comment": "Elevated"},
+          {"d": 0, "v": 22, "missing": false, "clinsig": true, "avg": true},
+          {"d": 183, "v": 10, "missing": false, "clinsig": false},
+          {"d": 183, "v": 16, "missing": false, "clinsig": false},
+          {"d": 183, "v": 13, "missing": false, "clinsig": false, "avg": true}
+        ] 
+      },
+      "Alanine Aminotransferase (U/L)": { 
+        "unit": "U/L", 
+        "ref": {"lo": 10, "hi": 40},
+        "data": [ {"d": -49, "v": 20, "missing": false, "clinsig": false}, {"d": 0, "v": 23, "missing": false, "clinsig": false, "isChanged": true}, {"d": 183, "v": 92, "missing": false, "clinsig": true, "comment": "Elevated"} ] 
+      },
+      "Albumin (g/L)": { 
+        "unit": "g/L", 
+        "ref": {"lo": 35, "hi": 50},
+        "data": [ {"d": -49, "v": 48, "missing": false, "clinsig": false}, {"d": 0, "v": 46, "missing": false, "clinsig": false}, {"d": 183, "v": 42, "missing": false, "clinsig": false, "isNew": true} ] 
+      },
+      "Hemoglobin (g/L)": { 
+        "unit": "g/L", 
+        "ref": {"lo": 120, "hi": 160},
+        "data": [ {"d": -49, "v": 170, "missing": false, "clinsig": false}, {"d": 0, "v": 159, "missing": false, "clinsig": false}, {"d": 183, "v": 157, "missing": false, "clinsig": false} ] 
+      },
+      "Leukocytes": { 
+        "unit": "10^9/L", 
+        "data": [ 
+          {"d": -49, "v": null, "missing": true, "clinsig": false}, 
+          {"d": 0, "v": null, "missing": true, "clinsig": false}
+        ] 
+      }
     },
     "vitalTestData": {
       "Diastolic Blood Pressure": { "unit": "mmHg", "data": [ {"d": -49, "v": 82, "clinsig": false}, {"d": 0, "v": 82.25, "clinsig": false}, {"d": 14, "v": 84, "clinsig": false, "isNew": true}, {"d": 183, "v": 84, "clinsig": false} ] },
@@ -339,16 +441,13 @@
         ]
       }
     },
+    "ecgTestData": {
+      "QTcF": { "unit": "ms", "data": [ {"d": -49, "v": 410, "clinsig": false}, {"d": 0, "v": 415, "clinsig": false, "isChanged": true}, {"d": 14, "v": 425, "clinsig": true}, {"d": 20, "v": 425, "clinsig": false, "missing": true}, {"d": 183, "v": 420, "clinsig": false} ] },
+      "PR Interval": { "unit": "ms", "data": [ {"d": -49, "v": 160, "clinsig": false}, {"d": 0, "v": 162, "clinsig": false}, {"d": 14, "v": 165, "clinsig": false}, {"d": 183, "v": 160, "clinsig": false} ] }
+    },
     "dosingData": [
       {"d": 1, "v": 100, "unit": "mg"},
       {"d": 14, "v": 100, "unit": "mg"}
-    ],
-    "ecgData": [
-      {"d": -49, "v": 410, "clinsig": false},
-      {"d": 0, "v": 415, "clinsig": false, "isChanged": true},
-      {"d": 14, "v": 425, "clinsig": true},
-      {"d": 20, "v": 425, "clinsig": false, "missing": true},
-      {"d": 183, "v": 420, "clinsig": false}
     ],
     "clinicalData": {
       "conmeds": [
@@ -379,18 +478,19 @@
     "vitalOptions": [
       { "name": "Heart Rate", "unit": "beats/min" }
     ],
+    "ecgOptions": [],
     "labTestData": {
-      "Albumin (g/L)": { "unit": "g/L", "data": [ {"d": -10, "v": 44, "missing": false, "clinsig": false}, {"d": 30, "v": 45, "missing": false, "clinsig": false}, {"d": 120, "v": 43, "missing": false, "clinsig": false} ] },
+      "Albumin (g/L)": { "unit": "g/L", "ref": {"lo": 35, "hi": 50}, "data": [ {"d": -10, "v": 44, "missing": false, "clinsig": false}, {"d": 30, "v": 45, "missing": false, "clinsig": false}, {"d": 120, "v": 43, "missing": false, "clinsig": false} ] },
       "Creatinine (umol/L)": { "unit": "umol/L", "data": [ {"d": -10, "v": 48, "missing": false, "clinsig": false}, {"d": 30, "v": 49, "missing": false, "clinsig": false}, {"d": 120, "v": 52, "missing": false, "clinsig": false} ] }
     },
     "vitalTestData": {
       "Heart Rate": { "unit": "beats/min", "data": [ {"d": -10, "v": 72, "clinsig": true}, {"d": 30, "v": 75, "clinsig": false}, {"d": 120, "v": 74, "clinsig": false} ] }
     },
+    "ecgTestData": {},
     "dosingData": [
       {"d": 1, "v": 0, "unit": "mg"},
       {"d": 14, "v": 0, "unit": "mg"}
     ],
-    "ecgData": [],
     "clinicalData": {
       "conmeds": [],
       "ae": [
@@ -407,7 +507,7 @@
   let masterData = {};
   let currentPatientId = "";
   
-  let payload, metadata, defaultTests, vitalOptions, labTestData, vitalTestData, dosingData, ecgData, clinicalData;
+  let payload, metadata, defaultTests, vitalOptions, ecgOptions, labTestData, vitalTestData, ecgTestData, dosingData, clinicalData;
   let minDay = 0, maxDay = 140, trueMaxDay = 140;
   let severityVector, severityScaler;
   let allTestsList = [];
@@ -417,22 +517,22 @@
   let tempGroupSelection = [];
   let selectedTests = [];
   let selectedVitals = [];
+  let selectedEcg = [];
   let activeLabTab = "";
-  let panelsState = { labs: true, vitals: false };
+  let panelsState = { labs: true, vitals: false, ecg: false };
   
   // The global comments store holds comments for ALL patients
   let globalCommentsStore = {
     "SRP-9001-SUBJ": {
       "dosing|Dosing|14": [{ id: 1, author: "Dr. Chen", body: "Dose escalated per protocol.", timestamp: new Date(Date.now() - 86400000) }],
       "ae|Rash of Right upper extremity|15": [{ id: 2, author: "Dr. Lee", body: "Patient reported localized itching.", timestamp: new Date(Date.now() - 3600000) }],
-      "ecg|QTcF|20": [{ id: 3, author: "Dr. Lee", body: "This needs to be filled out", timestamp: new Date(Date.now() - 3600000) }]
+      "ecg-QTcF|QTcF|20": [{ id: 3, author: "Dr. Lee", body: "This needs to be filled out", timestamp: new Date(Date.now() - 3600000) }]
     },
     "SRP-9002-SUBJ": {
       "ae|Fatigue|10": [{ id: 3, author: "Dr. Martinez", body: "Patient reported mild fatigue starting today.", timestamp: new Date(Date.now() - 7200000) }]
     }
   };
   
-  // The active comments dictionary points to the current patient's records
   let commentsStore = {}; 
   let currentCommentTarget = null; 
 
@@ -457,10 +557,10 @@
 
   function switchPatient() {
       currentPatientId = document.getElementById("patient-dropdown").value;
-      // Reset workspace state for new patient
       customGroups = {};
       selectedTests = [];
       selectedVitals = [];
+      selectedEcg = [];
       activeLabTab = "";
       closeCommentModal();
       loadPatient(currentPatientId);
@@ -469,7 +569,6 @@
   function loadPatient(pid) {
     payload = masterData[pid];
     
-    // Wire up comments to this specific patient
     if (!globalCommentsStore[pid]) globalCommentsStore[pid] = {};
     commentsStore = globalCommentsStore[pid];
 
@@ -477,14 +576,12 @@
     trueMaxDay = metadata.max_day || 140;
     maxDay = trueMaxDay;
     
-    // Calculate global minimum day safely
     let allDays = [];
-    if(payload.ecgData) payload.ecgData.forEach(d => allDays.push(d.d));
+    if(payload.ecgTestData) Object.values(payload.ecgTestData).forEach(t => t.data.forEach(d => allDays.push(d.d)));
     if(payload.labTestData) Object.values(payload.labTestData).forEach(t => t.data.forEach(d => allDays.push(d.d)));
     if(payload.vitalTestData) Object.values(payload.vitalTestData).forEach(t => t.data.forEach(d => allDays.push(d.d)));
     minDay = allDays.length > 0 ? Math.min(0, d3.min(allDays)) : 0;
 
-    // --- ADD THIS BUFFER LOGIC ---
     let rangeBuffer = Math.max(7, (maxDay - minDay) * 0.05);
     minDay = Math.floor(minDay - rangeBuffer);
     maxDay = Math.ceil(maxDay + rangeBuffer);
@@ -492,7 +589,22 @@
     severityVector = metadata.ae_severity_levels || ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
     severityScaler = createOrdinalColorScale(severityVector);
     
-    // Prune Labs to ONLY those with real data
+    // Process averages locally for rendering logic
+    if (payload.labTestData) {
+      Object.keys(payload.labTestData).forEach(tName => {
+        const tData = payload.labTestData[tName];
+        if (tData && tData.data) {
+          const days = Array.from(new Set(tData.data.map(d=>d.d)));
+          days.forEach(day => {
+            const dayPoints = tData.data.filter(d => d.d === day);
+            let avgPt = dayPoints.find(d => d.avg === true);
+            if (!avgPt) avgPt = dayPoints[0]; // If none specified, use the first as line-anchor
+            avgPt._isComputedAvg = true; 
+          });
+        }
+      });
+    }
+
     const validDefaultTests = {};
     if(payload.defaultTests && payload.labTestData) {
         Object.keys(payload.defaultTests).forEach(cat => {
@@ -505,7 +617,6 @@
     }
     defaultTests = validDefaultTests;
 
-    // Prune Vitals to ONLY those with real data
     if(payload.vitalOptions && payload.vitalTestData) {
         vitalOptions = payload.vitalOptions.filter(v => {
             const vd = payload.vitalTestData[v.name];
@@ -513,12 +624,18 @@
         });
     } else { vitalOptions = []; }
 
+    if(payload.ecgOptions && payload.ecgTestData) {
+        ecgOptions = payload.ecgOptions.filter(e => {
+            const ed = payload.ecgTestData[e.name];
+            return ed && ed.data && ed.data.filter(d => d.v !== null || d.missing).length > 0;
+        });
+    } else { ecgOptions = []; }
+
     labTestData = payload.labTestData || {};
     vitalTestData = payload.vitalTestData || {};
-    ecgData = payload.ecgData || [];
+    ecgTestData = payload.ecgTestData || {};
     clinicalData = payload.clinicalData || { conmeds: [], ae: [], addv: [] };
 
-    // Deduplicate dosing data step function handling
     let cleanDosing = [];
     if (payload.dosingData) {
         const sortedDose = payload.dosingData.sort((a,b) => a.d - b.d);
@@ -535,14 +652,15 @@
       defaultTests[cat].forEach(t => allTestsList.push(t));
     });
     
-    // Auto-select valid available data 
     selectedTests = allTestsList.map(t => t.name).slice(0, 5);
     selectedVitals = vitalOptions.map(v => v.name).slice(0, 5);
+    selectedEcg = ecgOptions.map(e => e.name).slice(0, 5);
     if(Object.keys(defaultTests).length > 0) activeLabTab = Object.keys(defaultTests)[0];
 
     evaluateMissingDomains();
     renderLabsPicker();
     renderVitalsPicker();
+    renderEcgPicker();
     renderViz();
   }
 
@@ -551,7 +669,6 @@
       if (!clinicalData.conmeds || clinicalData.conmeds.length === 0) missing.push("ConMeds");
       if (!clinicalData.ae || clinicalData.ae.length === 0) missing.push("Adverse Events");
       if (!dosingData || dosingData.length === 0) missing.push("Dosing");
-      if (!ecgData || ecgData.length === 0) missing.push("ECG");
       if (!clinicalData.addv || clinicalData.addv.length === 0) missing.push("Protocol Deviations");
 
       const labsPanel = document.getElementById("labs-panel-row");
@@ -570,6 +687,14 @@
           if(vitalsPanel) vitalsPanel.classList.remove("hidden");
       }
 
+      const ecgPanel = document.getElementById("ecg-panel-row");
+      if (ecgOptions.length === 0) {
+          missing.push("ECG Parameters");
+          if(ecgPanel) ecgPanel.classList.add("hidden");
+      } else {
+          if(ecgPanel) ecgPanel.classList.remove("hidden");
+      }
+
       const msgDiv = document.getElementById("missing-data-message");
       if (missing.length > 0) {
           msgDiv.innerHTML = `No data available for this patient: <span>${missing.join(", ")}</span>`;
@@ -580,11 +705,6 @@
   }
 
   // --- HELPERS ---
-  function getLineColor(index) {
-    const p = ["#1d1d1f", "#0071e3", "#ff3b30", "#34c759", "#ff9500", "#af52de"];
-    return p[index % p.length];
-  }
-  
   function createOrdinalColorScale(vector) {
     if(!vector || vector.length === 0) return () => "#9e9e9e";
     const s = d3.scaleLinear().domain([0, (vector.length-1)/2, vector.length-1]).range(["#34C759", "#FFD60A", "#FF3B30"]).interpolate(d3.interpolateRgb);
@@ -616,18 +736,22 @@
   function getAvailableItemsAtDay(lane, day) {
     const items = new Set();
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData) {
-          const pt = tData.data.find(d => d.d === day && (d.v !== null || d.missing));
-          if (pt) items.add(tName);
-        }
-      });
+      const tData = labTestData[lane.labName];
+      if (tData) {
+        const pt = tData.data.find(d => d.d === day && (d.v !== null || d.missing));
+        if (pt) items.add(lane.labName);
+      }
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData) {
         const pt = vData.data.find(d => d.d === day && (d.v !== null || d.missing));
         if (pt) items.add(lane.vitalName);
+      }
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData) {
+        const pt = eData.data.find(d => d.d === day && (d.v !== null || d.missing));
+        if (pt) items.add(lane.ecgName);
       }
     } else if (lane.type === 'ae') {
       clinicalData.ae.forEach(a => { if (day >= a.start && day <= a.end) items.add(a.type); });
@@ -636,9 +760,6 @@
     } else if (lane.type === 'dosing') {
       let dPt = dosingData.find(m => m.d === day && m.v >= 0); 
       if (dPt) items.add("Dosing");
-    } else if (lane.type === 'ecg') {
-      const pt = ecgData.find(d => d.d === day && (d.v !== null || d.missing));
-      if (pt) items.add("QTcF");
     } else if (lane.type === 'addv') {
       const pt = clinicalData.addv.find(d => d.day === day);
       if (pt) items.add("Deviation");
@@ -671,15 +792,14 @@
   function getLaneWarningCount(lane) {
     let count = 0;
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) count += tData.data.filter(d => d.clinsig && !d.missing && d.v !== null).length;
-      });
-    } else if (lane.type === 'ecg' && ecgData) {
-      count += ecgData.filter(d => d.clinsig).length;
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) count += tData.data.filter(d => d.clinsig && !d.missing && d.v !== null).length;
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) count += vData.data.filter(d => d.clinsig && d.v !== null).length;
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) count += eData.data.filter(d => d.clinsig && d.v !== null).length;
     }
     return count;
   }
@@ -687,15 +807,14 @@
   function getLaneMissingCount(lane) {
     let count = 0;
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) count += tData.data.filter(d => d.missing).length;
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) count += tData.data.filter(d => d.missing).length;
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) count += vData.data.filter(d => d.missing).length;
-    } else if (lane.id === 'ecg' && ecgData) {
-      count += ecgData.filter(d => d.missing).length;
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) count += eData.data.filter(d => d.missing).length;
     }
     return count;
   }
@@ -703,15 +822,14 @@
   function getLaneNewCount(lane) {
     let count = 0;
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) count += tData.data.filter(d => d.isNew).length;
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) count += tData.data.filter(d => d.isNew).length;
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) count += vData.data.filter(d => d.isNew).length;
-    } else if (lane.id === 'ecg' && ecgData) {
-      count += ecgData.filter(d => d.isNew).length;
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) count += eData.data.filter(d => d.isNew).length;
     }
     return count;
   }
@@ -719,15 +837,14 @@
   function getLaneChangedCount(lane) {
     let count = 0;
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) count += tData.data.filter(d => d.isChanged).length;
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) count += tData.data.filter(d => d.isChanged).length;
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) count += vData.data.filter(d => d.isChanged).length;
-    } else if (lane.id === 'ecg' && ecgData) {
-      count += ecgData.filter(d => d.isChanged).length;
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) count += eData.data.filter(d => d.isChanged).length;
     }
     return count;
   }
@@ -735,19 +852,20 @@
   function getMissingDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) {
-          tData.data.forEach(d => { if (d.missing) daysMap.set(d.d, true); });
-        }
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) {
+        tData.data.forEach(d => { if (d.missing) daysMap.set(d.d, true); });
+      }
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) {
         vData.data.forEach(d => { if (d.missing) daysMap.set(d.d, true); });
       }
-    } else if (lane.id === 'ecg' && ecgData) {
-      ecgData.forEach(d => { if (d.missing) daysMap.set(d.d, true); });
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) {
+        eData.data.forEach(d => { if (d.missing) daysMap.set(d.d, true); });
+      }
     }
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
@@ -755,19 +873,20 @@
   function getFlaggedDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) {
-          tData.data.forEach(d => { if (d.clinsig && !d.missing && d.v !== null) daysMap.set(d.d, true); });
-        }
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) {
+        tData.data.forEach(d => { if (d.clinsig && !d.missing && d.v !== null) daysMap.set(d.d, true); });
+      }
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) {
         vData.data.forEach(d => { if (d.clinsig && d.v !== null) daysMap.set(d.d, true); });
       }
-    } else if (lane.id === 'ecg' && ecgData) {
-      ecgData.forEach(d => { if (d.clinsig && d.v !== null) daysMap.set(d.d, true); });
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) {
+        eData.data.forEach(d => { if (d.clinsig && d.v !== null) daysMap.set(d.d, true); });
+      }
     }
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
@@ -775,19 +894,20 @@
   function getNewDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) {
-          tData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
-        }
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) {
+        tData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+      }
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) {
         vData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
       }
-    } else if (lane.id === 'ecg' && ecgData) {
-      ecgData.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) {
+        eData.data.forEach(d => { if (d.isNew) daysMap.set(d.d, true); });
+      }
     }
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
@@ -795,19 +915,20 @@
   function getChangedDaysForLane(lane) {
     const daysMap = new Map();
     if (lane.type === 'lab') {
-      lane.tests.forEach(tName => {
-        const tData = labTestData[tName];
-        if (tData && tData.data) {
-          tData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
-        }
-      });
+      const tData = labTestData[lane.labName];
+      if (tData && tData.data) {
+        tData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+      }
     } else if (lane.type === 'vital') {
       const vData = vitalTestData[lane.vitalName];
       if (vData && vData.data) {
         vData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
       }
-    } else if (lane.id === 'ecg' && ecgData) {
-      ecgData.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+    } else if (lane.type === 'ecg') {
+      const eData = ecgTestData[lane.ecgName];
+      if (eData && eData.data) {
+        eData.data.forEach(d => { if (d.isChanged) daysMap.set(d.d, true); });
+      }
     }
     return Array.from(daysMap.keys()).map(day => ({ day }));
   }
@@ -821,7 +942,6 @@
       let valStr = pt.v !== null ? pt.v : "";
       let unitStr = unit ? `<span class="chip-unit">${unit}</span>` : "";
 
-      // Prioritize the visual state if multiple exist
       if (pt.missing) {
           return `<div class="chip chip-missing"><span class="chip-icon" style="color:#ff3b30;">${iconMissing}</span><span class="chip-name">${name}</span><span class="chip-val">Missing</span></div>`;
       } else if (pt.isNew) {
@@ -847,29 +967,24 @@
     const stripRow = container.append("div").attr("class", "comment-strip-row");
     const headerDiv = stripRow.append("div").attr("class", "comment-strip-header");
     
-    // NEW Data
     const newCount = getLaneNewCount(lane);
     if (newCount > 0) {
         headerDiv.append("div").attr("class", "lane-new-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> ${newCount}`);
     }
 
-    // CHANGED Data
     const changedCount = getLaneChangedCount(lane);
     if (changedCount > 0) {
         headerDiv.append("div").attr("class", "lane-changed-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.21l-3.11 3.11"></path></svg> ${changedCount}`);
     }
 
-    // MISSING Data
     const missingCount = getLaneMissingCount(lane);
     if (missingCount > 0) {
         headerDiv.append("div").attr("class", "lane-missing-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg> ${missingCount}`);
     }
 
-    // FLAGGED Data
     const warningCount = getLaneWarningCount(lane);
     if (warningCount > 0) headerDiv.append("div").attr("class", "lane-warning-badge").html(`<span>⚠</span> ${warningCount}`);
 
-    // COMMENTS
     const count = getLaneCommentCount(lane);
     if (count > 0) headerDiv.append("div").attr("class", "lane-comment-badge").html(`<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg> ${count}`);
 
@@ -883,7 +998,6 @@
       svg.append("line").attr("x1", xScale(t)).attr("x2", xScale(t)).attr("y1", 0).attr("y2", STRIP_H).attr("stroke", "#e5e5ea").attr("stroke-width", 1);
     });
 
-    // Determine all active days needing a tick
     const allDays = Array.from(new Set([...commentedDays, ...missingDays, ...flaggedDays, ...newDays, ...changedDays]));
 
     allDays.forEach(day => {
@@ -896,7 +1010,6 @@
             const isChanged = changedDays.includes(day);
 
             const activeTicks = [];
-            // Order determines visual stacking order left to right
             if (isNew) activeTicks.push({ color: "#30D1AB", type: 'new' });
             if (isChanged) activeTicks.push({ color: "#AF52DE", type: 'changed' });
             if (isMissing) activeTicks.push({ color: "#ff3b30", type: 'missing' });
@@ -906,7 +1019,6 @@
             const tickWidth = 3;
             const gap = 1;
             const totalWidth = (activeTicks.length * tickWidth) + ((activeTicks.length - 1) * gap);
-            // Center the entire cluster over the day
             const startX = cx - (totalWidth / 2);
 
             const g = svg.append("g")
@@ -996,6 +1108,17 @@
   }
 
   function toggleVital(name) { if(selectedVitals.includes(name)) selectedVitals = selectedVitals.filter(x => x !== name); else selectedVitals.push(name); renderVitalsPicker(); renderViz(); }
+
+  function renderEcgPicker() {
+    const list = document.getElementById("ecgList"); list.innerHTML = "";
+    ecgOptions.forEach(e => { const isSelected = selectedEcg.includes(e.name); const btn = document.createElement("div"); btn.className = `test-toggle ${isSelected ? 'selected' : ''}`; btn.innerHTML = `<span>${e.name}</span>`; btn.onclick = (ev) => { ev.stopPropagation(); toggleEcg(e.name); }; list.appendChild(btn); });
+    const pillContainer = document.getElementById("ecg-pills"); pillContainer.innerHTML = "";
+    if (selectedEcg.length === 0) pillContainer.innerHTML = `<span style="font-size:11px; color:#999; padding:4px;">No ECG selected</span>`;
+    else { selectedEcg.forEach(e => { const pill = document.createElement("div"); pill.className = "pill"; pill.innerHTML = `${e}<div class="pill-remove" onclick="event.stopPropagation(); toggleEcg('${e}')">×</div>`; pillContainer.appendChild(pill); }); }
+    updatePanelUI('ecg');
+  }
+
+  function toggleEcg(name) { if(selectedEcg.includes(name)) selectedEcg = selectedEcg.filter(x => x !== name); else selectedEcg.push(name); renderEcgPicker(); renderViz(); }
 
   // --- MODAL ---
   function openCommentModal(lane, day, clickedItem) {
@@ -1104,39 +1227,52 @@
   let baseLayout = [
     { id: "dosing", type: "dosing", title: "Dosing" },
     { id: "conmeds", type: "conmeds", title: "ConMeds" },
-    { id: "ecg", type: "ecg", title: "ECG" },
     { id: "ae", type: "ae", title: "Adverse Events" },
     { id: "addv", type: "addv", title: "ADDV" }
   ];
-  let laneOrder = ["dosing", "conmeds", "ecg", "ae", "addv"];
+  let laneOrder = ["dosing", "conmeds", "ae", "addv"];
 
   function getLayout() {
-    const grouped = {};
-    selectedTests.forEach(tName => { const t = allTestsList.find(x => x.name === tName); if(!t) return; if(!grouped[t.unit]) grouped[t.unit] = []; grouped[t.unit].push(tName); });
-    Object.keys(grouped).forEach(u => { if(!laneOrder.includes(u)) laneOrder.push(u); });
-    selectedVitals.forEach(v => { const id = `vital-${v}`; if(!laneOrder.includes(id)) { const ecgIdx = laneOrder.indexOf("ecg"); if(ecgIdx > -1) laneOrder.splice(ecgIdx + 1, 0, id); else laneOrder.push(id); } });
+    // Inject selected labs individually 
+    selectedTests.forEach(tName => { 
+      const id = `lab-${tName}`; 
+      if(!laneOrder.includes(id)) { 
+        const aeIdx = laneOrder.indexOf("ae"); 
+        if(aeIdx > -1) laneOrder.splice(aeIdx, 0, id); 
+        else laneOrder.push(id); 
+      } 
+    });
+    
+    // Inject selected vitals
+    selectedVitals.forEach(v => { const id = `vital-${v}`; if(!laneOrder.includes(id)) { const aeIdx = laneOrder.indexOf("ae"); if(aeIdx > -1) laneOrder.splice(aeIdx, 0, id); else laneOrder.push(id); } });
+    
+    // Inject selected ECG parameters
+    selectedEcg.forEach(e => { const id = `ecg-${e}`; if(!laneOrder.includes(id)) { const aeIdx = laneOrder.indexOf("ae"); if(aeIdx > -1) laneOrder.splice(aeIdx, 0, id); else laneOrder.push(id); } });
     
     const finalLayout = [];
     laneOrder.forEach(id => {
       const base = baseLayout.find(b => b.id === id);
       if(base) {
-        // Dynamic Lane Pruning - drop empty features automatically
         if (base.id === 'conmeds' && (!clinicalData.conmeds || clinicalData.conmeds.length === 0)) return;
         if (base.id === 'ae' && (!clinicalData.ae || clinicalData.ae.length === 0)) return;
         if (base.id === 'dosing' && (!dosingData || dosingData.length === 0)) return;
-        if (base.id === 'ecg' && (!ecgData || ecgData.length === 0)) return;
         if (base.id === 'addv' && (!clinicalData.addv || clinicalData.addv.length === 0)) return;
 
         let h = 50;
         if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.conmeds);
         else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
         else if (base.type === 'dosing') h = 35;
-        else if (base.type === 'ecg') h = 60;
         else if (base.type === 'addv') h = 50;
         finalLayout.push({ ...base, height: h }); return;
       }
-      if(grouped[id]) { finalLayout.push({ id, type: 'lab', title: id, tests: grouped[id], height: 70 }); return; }
+      if(id.startsWith("lab-")) { 
+          const tName = id.replace("lab-", ""); 
+          if(selectedTests.includes(tName)) { 
+              finalLayout.push({ id, type: 'lab', title: tName, labName: tName, height: 60 }); 
+          } 
+      }
       if(id.startsWith("vital-")) { const vName = id.replace("vital-", ""); if(selectedVitals.includes(vName)) { finalLayout.push({ id, type: 'vital', title: vName, vitalName: vName, height: 60 }); } }
+      if(id.startsWith("ecg-")) { const eName = id.replace("ecg-", ""); if(selectedEcg.includes(eName)) { finalLayout.push({ id, type: 'ecg', title: eName, ecgName: eName, height: 60 }); } }
     });
     return finalLayout;
   }
@@ -1168,15 +1304,19 @@
       header.node().addEventListener('dragover', (e) => handleDragOver(e));
       header.node().addEventListener('dragleave', (e) => handleDragLeave(e));
       header.node().addEventListener('drop', (e) => handleDrop(e, index));
-      header.append("div").attr("class", "lane-title").text(lane.title);
+      
+      // Keep lane title cleaner by stripping unit logic
+      let cleanTitle = lane.title;
+      if (lane.type === 'lab') cleanTitle = cleanTitle.replace(/\s*\(.*?\)\s*/g, '');
+      header.append("div").attr("class", "lane-title").text(cleanTitle);
 
       let sub = "";
-      if(lane.type === 'lab') sub = lane.tests.join(", ");
+      if(lane.type === 'lab') sub = labTestData[lane.labName]?.unit || "";
       else if(lane.type === 'dosing') sub = "Step Intervals";
       else if(lane.type === 'conmeds') sub = "Durations";
-      else if(lane.type === 'ecg') sub = "msec";
       else if(lane.type === 'addv') sub = "Deviations";
       else if(lane.type === 'vital') sub = vitalTestData[lane.vitalName]?.unit || "";
+      else if(lane.type === 'ecg') sub = ecgTestData[lane.ecgName]?.unit || "";
       else sub = "Severity";
       header.append("div").attr("class", "lane-subtitle").text(sub);
 
@@ -1191,7 +1331,6 @@
 
       if(lane.type === 'dosing') drawDosing(svg, x, lane.height, lane);
       if(lane.type === 'conmeds') drawDurationLane(svg, x, lane.height, clinicalData.conmeds, "#9e9e9e", lane);
-      if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane.height, lane);
       if(lane.type === 'addv') drawADDV(svg, x, lane.height, lane);
       if(lane.type === 'ae') {
         drawDurationLane(svg, x, lane.height, clinicalData.ae, (d) => severityScaler(d.severity), lane);
@@ -1204,6 +1343,7 @@
       }
       if(lane.type === 'lab') drawLabs(svg, ySvg, x, lane);
       if(lane.type === 'vital') drawVitals(svg, ySvg, x, lane);
+      if(lane.type === 'ecg') drawECG(svg, ySvg, x, lane);
 
       drawCommentStrip(laneWrap, lane, x);
     });
@@ -1301,18 +1441,18 @@
     }
   }
 
-  function drawECG(svg, ySvg, xScale, h, lane) {
-    if(!ecgData || ecgData.length === 0) return;
+  function drawECG(svg, ySvg, xScale, lane) {
+    const eData = ecgTestData[lane.ecgName]; if(!eData) return;
     
-    const validData = ecgData.filter(d => d.v !== null && !isNaN(d.v));
+    const validData = eData.data.filter(d => d.v !== null && !isNaN(d.v));
     if(validData.length === 0) return;
 
-    const color = getLineColor(0);
+    const color = "#1d1d1f"; 
     let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
     
     if(min === max) { min -= 10; max += 10; }
 
-    const y = d3.scaleLinear().domain([min, max]).range([h-6, 6]);
+    const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
     const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
     
     svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none");
@@ -1325,7 +1465,7 @@
       .attr("stroke", color)
       .attr("stroke-width", 1.5)
       .attr("class", "clickable-point")
-      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, "QTcF"); });
+      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, lane.ecgName); });
       
     [min, max].forEach(v => { 
         ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(Number.isInteger(v) ? v : v.toFixed(1)); 
@@ -1349,7 +1489,6 @@
 
     svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", vitalBlack).attr("stroke-width", 2).style("pointer-events", "none");
     
-    // Always fill in with black per request
     svg.selectAll(".dot-vital").data(validData).enter().append("circle")
       .attr("cx", d => xScale(d.d))
       .attr("cy", d => y(d.v))
@@ -1366,44 +1505,67 @@
   }
 
   function drawLabs(svg, ySvg, xScale, lane) {
-    const h = lane.height; let globalMin = Infinity, globalMax = -Infinity;
+    const tName = lane.labName;
+    const tData = labTestData[tName]; 
+    if(!tData) return;
     
-    lane.tests.forEach(tName => { const tData = labTestData[tName]; if(!tData) return; tData.data.forEach(d => { if(!d.missing && d.v !== null) { if (d.v < globalMin) globalMin = d.v; if (d.v > globalMax) globalMax = d.v; } }); });
-    if (globalMin === Infinity) return;
-    
-    if (globalMin === globalMax) { globalMin -= (globalMin*0.1); globalMax += (globalMax*0.1); }
+    const validData = tData.data.filter(d => !d.missing && d.v !== null);
+    if(validData.length === 0) return;
 
-    const y = d3.scaleLinear().domain([globalMin, globalMax]).range([h-6, 6]);
+    const ref = tData.ref || {};
+    let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
     
-    lane.tests.forEach((tName, index) => {
-      const tData = labTestData[tName]; if(!tData) return;
-      const color = getLineColor(index);
-      
-      const line = d3.line().defined(d => !d.missing && d.v !== null).x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
-      svg.append("path").datum(tData.data).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
-      
-      tData.data.forEach((d, i) => {
-        if (d.missing && i > 0 && i < tData.data.length - 1) {
-          const prev = tData.data[i-1]; const next = tData.data[i+1];
-          if (!prev.missing && !next.missing && prev.v !== null && next.v !== null) {
-              svg.append("line").attr("x1", xScale(prev.d)).attr("y1", y(prev.v)).attr("x2", xScale(next.d)).attr("y2", y(next.v)).attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
-          }
+    // Expand domain to include normal ranges if they exist
+    if (ref.lo !== undefined && ref.lo !== null) min = Math.min(min, ref.lo);
+    if (ref.hi !== undefined && ref.hi !== null) max = Math.max(max, ref.hi);
+
+    if (min === max) { min -= (min*0.1); max += (max*0.1); }
+
+    const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
+    
+    // 1. Draw Normal Reference Range Lines (Dashed Grey)
+    if(ref.hi !== undefined && ref.hi !== null) {
+        svg.append("line").attr("x1", 0).attr("x2", 800).attr("y1", y(ref.hi)).attr("y2", y(ref.hi))
+           .attr("stroke", "#aeaeb2").attr("stroke-width", 1.5).attr("stroke-dasharray", "4,4").style("pointer-events", "none");
+    }
+    if(ref.lo !== undefined && ref.lo !== null) {
+        svg.append("line").attr("x1", 0).attr("x2", 800).attr("y1", y(ref.lo)).attr("y2", y(ref.lo))
+           .attr("stroke", "#aeaeb2").attr("stroke-width", 1.5).attr("stroke-dasharray", "4,4").style("pointer-events", "none");
+    }
+
+    // 2. Draw Trend Line connecting ONLY the computed Average points
+    const avgData = validData.filter(d => d._isComputedAvg).sort((a,b) => a.d - b.d);
+    const color = "#1d1d1f"; 
+    
+    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+    svg.append("path").datum(avgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
+    
+    // Draw missing connectors
+    tData.data.forEach((d, i) => {
+      if (d.missing) {
+        const prev = avgData.slice().reverse().find(a => a.d < d.d);
+        const next = avgData.find(a => a.d > d.d);
+        if (prev && next) {
+            svg.append("line").attr("x1", xScale(prev.d)).attr("y1", y(prev.v)).attr("x2", xScale(next.d)).attr("y2", y(next.v))
+               .attr("stroke", "lightgrey").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
         }
-      });
-      
-      const safeName = getSafeClassName(tName);
-      svg.selectAll(`.dot-${safeName}`).data(tData.data.filter(d => !d.missing && d.v !== null)).enter().append("circle")
-        .attr("cx", d => xScale(d.d))
-        .attr("cy", d => y(d.v))
-        .attr("r", 3.5)
-        .attr("fill", color)
-        .attr("stroke", color)
-        .attr("stroke-width", 1.5)
-        .attr("class", "clickable-point")
-        .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, tName); });
+      }
     });
     
-    [globalMin, globalMax].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(v.toFixed(1)); });
+    // Sort so black points are rendered on top of grey points
+    const sortedValidData = [...validData].sort((a,b) => (a._isComputedAvg ? 1 : 0) - (b._isComputedAvg ? 1 : 0));
+    
+    svg.selectAll(".dot-lab").data(sortedValidData).enter().append("circle")
+      .attr("cx", d => xScale(d.d))
+      .attr("cy", d => y(d.v))
+      .attr("r", 3.5)
+      .attr("fill", d => d._isComputedAvg ? color : "#e5e5ea")
+      .attr("stroke", d => d._isComputedAvg ? color : "#86868b")
+      .attr("stroke-width", 1.5)
+      .attr("class", "clickable-point")
+      .on("click", (e, d) => { e.stopPropagation(); openCommentModal(lane, d.d, tName); });
+      
+    [min, max].forEach(v => { ySvg.append("text").attr("class", "y-tick-label").attr("x", 5).attr("y", y(v)+3).text(Number.isInteger(v) ? v : v.toFixed(1)); });
   }
 
   // --- DRAG & DROP ---
@@ -1471,16 +1633,18 @@
               });
           }
         }
-        else if (lane.id === 'ecg') {
-          secTitle = "ECG";
-          if(ecgData && ecgData.length > 0) {
-            const validEcg = ecgData.filter(d => (d.v !== null && !isNaN(d.v)) || d.missing);
-            if(validEcg.length > 0) {
-                const ecgPt = validEcg.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-                if(Math.abs(ecgPt.d-day) <= 14) { 
-                  chipsHtml = buildTooltipChip(ecgPt, "QTcF", "ms", "#1d1d1f");
-                }
-            }
+        else if (lane.type === 'ecg') {
+          secTitle = lane.title;
+          const eName = lane.ecgName;
+          const dData = ecgTestData[eName];
+          if(dData && dData.data && dData.data.length > 0) {
+              const validEcg = dData.data.filter(p => (p.v !== null && !isNaN(p.v)) || p.missing);
+              if(validEcg.length > 0) {
+                  const pt = validEcg.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p); 
+                  if(Math.abs(pt.d-day) <= 14) { 
+                    chipsHtml = buildTooltipChip(pt, eName, dData.unit || "ms", "#1d1d1f");
+                  }
+              }
           }
         }
         else if (lane.type === 'vital') {
@@ -1500,20 +1664,27 @@
         }
         else if (lane.type === 'lab') {
           secTitle = lane.title;
-          lane.tests.forEach((tName, idx) => {
-            const data = labTestData[tName]; 
-            const color = getLineColor(idx);
-            if(data && data.data && data.data.length > 0) {
-                const validLabs = data.data.filter(p => p.v !== null || p.missing);
-                if(validLabs.length > 0) {
-                    const pt = validLabs.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
-                    if(Math.abs(pt.d-day) <= 14) {
-                      let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive Protein", "hs-CRP");
-                      chipsHtml += buildTooltipChip(pt, sName, data.unit, color);
-                    }
-                }
-            }
-          });
+          const tName = lane.labName;
+          const data = labTestData[tName]; 
+          if(data && data.data && data.data.length > 0) {
+              const validLabs = data.data.filter(p => p.v !== null || p.missing);
+              if(validLabs.length > 0) {
+                  // Find the closest overall day, then grab ALL points on that day
+                  const closestPt = validLabs.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
+                  if(Math.abs(closestPt.d-day) <= 14) {
+                    const targetDay = closestPt.d;
+                    const dayPoints = validLabs.filter(p => p.d === targetDay);
+                    let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive Protein", "hs-CRP");
+                    
+                    // Render a chip for every record found on that day
+                    dayPoints.forEach(dp => {
+                        const color = dp._isComputedAvg ? "#1d1d1f" : "#aeaeb2";
+                        const sfx = (dp._isComputedAvg && dayPoints.length > 1) ? " (Avg)" : "";
+                        chipsHtml += buildTooltipChip(dp, sName + sfx, data.unit, color);
+                    });
+                  }
+              }
+          }
         }
         else if (lane.id === 'ae') {
           secTitle = "Adverse Events";
