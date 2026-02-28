@@ -446,8 +446,11 @@
       "PR Interval": { "unit": "ms", "data": [ {"d": -49, "v": 160, "clinsig": false}, {"d": 0, "v": 162, "clinsig": false}, {"d": 14, "v": 165, "clinsig": false}, {"d": 183, "v": 160, "clinsig": false} ] }
     },
     "dosingData": [
-      {"d": 1, "v": 100, "unit": "mg"},
-      {"d": 14, "v": 100, "unit": "mg"}
+      {"d": 1, "v": 1000, "unit": "mg"},
+      {"d": 14, "v": 10000, "unit": "mg"},
+      {"d": 18, "v": 10000, "unit": "mg"},
+      {"d": 22, "v": 10000, "unit": "mg"},
+      {"d": 100, "v": 5000, "unit": "mg"}
     ],
     "clinicalData": {
       "conmeds": [
@@ -489,7 +492,7 @@
     "ecgTestData": {},
     "dosingData": [
       {"d": 1, "v": 0, "unit": "mg"},
-      {"d": 14, "v": 0, "unit": "mg"}
+      {"d": 14, "v": 2500, "unit": "mg"}
     ],
     "clinicalData": {
       "conmeds": [],
@@ -655,6 +658,15 @@
     selectedTests = allTestsList.map(t => t.name).slice(0, 5);
     selectedVitals = vitalOptions.map(v => v.name).slice(0, 5);
     selectedEcg = ecgOptions.map(e => e.name).slice(0, 5);
+    
+    // Change default tab to "All"
+    if(allTestsList.length > 0) activeLabTab = "All"; 
+
+    evaluateMissingDomains();
+    
+    selectedTests = allTestsList.map(t => t.name).slice(0, 5);
+    selectedVitals = vitalOptions.map(v => v.name).slice(0, 5);
+    selectedEcg = ecgOptions.map(e => e.name).slice(0, 5);
     if(Object.keys(defaultTests).length > 0) activeLabTab = Object.keys(defaultTests)[0];
 
     evaluateMissingDomains();
@@ -721,6 +733,41 @@
     const rows = [];
     sorted.forEach(d => { let placed = false; for(let i=0; i<rows.length; i++) { if (rows[i] + 2 < d.start) { rows[i] = d.end; placed = true; break; } } if(!placed) rows.push(d.end); });
     return Math.max(20 + (rows.length * 18), 55);
+  }
+
+  // --- NEW: COLLISION DETECTION FOR DOSING ---
+  function calculateDosingHeight(data, xScale) {
+    if (!data || data.length === 0) return 40;
+    const levels = [];
+    const sorted = [...data].sort((a,b) => a.d - b.d);
+    
+    sorted.forEach(d => {
+        if(d.v < 0) return;
+        const valStr = d.v.toLocaleString();
+        const pWidth = Math.max(30, valStr.length * 7 + 14);
+        const cx = xScale(d.d);
+        // Include a 4px padding buffer on each side for the collision box
+        const startX = cx - pWidth / 2 - 4; 
+        const endX = cx + pWidth / 2 + 4;
+        
+        let placed = false;
+        for(let i=0; i<levels.length; i++) {
+            // If the right-edge of the previous pill on this level is to the left of this pill's startX
+            if (levels[i] < startX) {
+                levels[i] = endX;
+                d.rowIndex = i;
+                placed = true;
+                break;
+            }
+        }
+        if(!placed) {
+            d.rowIndex = levels.length;
+            levels.push(endX);
+        }
+    });
+    
+    // Base padding is 16 top. Row height is 22 (pill) + 6 (gap) = 28.
+    return Math.max(40, 16 + (levels.length * 28));
   }
 
   function getActiveDoseAtDay(day) {
@@ -1052,8 +1099,10 @@
   }
 
   function getAllLabGroups() {
-    const groups = { ...defaultTests };
-    Object.keys(customGroups).forEach(k => { groups[k] = customGroups[k].map(name => allTestsList.find(t => t.name === name) || { name }); });
+    const groups = { "All": allTestsList, ...defaultTests };
+    Object.keys(customGroups).forEach(k => { 
+        groups[k] = customGroups[k].map(name => allTestsList.find(t => t.name === name) || { name }); 
+    });
     return groups;
   }
 
@@ -1232,8 +1281,7 @@
   ];
   let laneOrder = ["dosing", "conmeds", "ae", "addv"];
 
-  function getLayout() {
-    // Inject selected labs individually 
+  function getLayout(xScale) {
     selectedTests.forEach(tName => { 
       const id = `lab-${tName}`; 
       if(!laneOrder.includes(id)) { 
@@ -1243,10 +1291,7 @@
       } 
     });
     
-    // Inject selected vitals
     selectedVitals.forEach(v => { const id = `vital-${v}`; if(!laneOrder.includes(id)) { const aeIdx = laneOrder.indexOf("ae"); if(aeIdx > -1) laneOrder.splice(aeIdx, 0, id); else laneOrder.push(id); } });
-    
-    // Inject selected ECG parameters
     selectedEcg.forEach(e => { const id = `ecg-${e}`; if(!laneOrder.includes(id)) { const aeIdx = laneOrder.indexOf("ae"); if(aeIdx > -1) laneOrder.splice(aeIdx, 0, id); else laneOrder.push(id); } });
     
     const finalLayout = [];
@@ -1261,7 +1306,7 @@
         let h = 50;
         if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.conmeds);
         else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
-        else if (base.type === 'dosing') h = 35;
+        else if (base.type === 'dosing') h = calculateDosingHeight(dosingData, xScale);
         else if (base.type === 'addv') h = 50;
         finalLayout.push({ ...base, height: h }); return;
       }
@@ -1279,10 +1324,11 @@
 
   // --- VIZ ---
   function renderViz() {
-    const layout = getLayout();
     const root = d3.select("#viz-root").html("");
     const xRange = [0, 800];
     const x = d3.scaleLinear().domain([minDay, maxDay]).range(xRange);
+    
+    const layout = getLayout(x);
     
     let totalHeight = layout.reduce((sum, lane) => sum + lane.height + 16 + 1, 0) + 35;
     d3.select("#global-interaction-layer").style("height", totalHeight + "px");
@@ -1305,14 +1351,13 @@
       header.node().addEventListener('dragleave', (e) => handleDragLeave(e));
       header.node().addEventListener('drop', (e) => handleDrop(e, index));
       
-      // Keep lane title cleaner by stripping unit logic
       let cleanTitle = lane.title;
       if (lane.type === 'lab') cleanTitle = cleanTitle.replace(/\s*\(.*?\)\s*/g, '');
       header.append("div").attr("class", "lane-title").text(cleanTitle);
 
       let sub = "";
       if(lane.type === 'lab') sub = labTestData[lane.labName]?.unit || "";
-      else if(lane.type === 'dosing') sub = "Step Intervals";
+      else if(lane.type === 'dosing') sub = dosingData.length ? dosingData[0].unit : "";
       else if(lane.type === 'conmeds') sub = "Durations";
       else if(lane.type === 'addv') sub = "Deviations";
       else if(lane.type === 'vital') sub = vitalTestData[lane.vitalName]?.unit || "";
@@ -1403,42 +1448,52 @@
 
   function drawDosing(svg, xScale, h, lane) {
     if(!dosingData || dosingData.length === 0) return;
-    const max = d3.max(dosingData, d=>d.v);
-    const colorScale = d3.scaleLinear().domain([0, max]).range(["#e5e5ea", "#1d1d1f"]);
-    
-    for(let i=0; i<dosingData.length; i++) {
-        const curr = dosingData[i];
-        const next = dosingData[i+1];
-        const endD = next ? next.d : trueMaxDay;
 
-        if (curr.v >= 0 && endD > curr.d) {
-            const startX = xScale(curr.d);
-            const endX = xScale(endD);
-            const drawStartX = Math.max(0, startX);
-            const drawWidth = Math.max(endX - drawStartX, 2);
+    dosingData.forEach(d => {
+      if (d.v >= 0) {
+          const cx = xScale(d.d);
+          if (cx >= 0 && cx <= 800) {
+              const g = svg.append("g")
+                  .attr("class", "clickable-point")
+                  .on("click", (e) => {
+                      e.stopPropagation();
+                      openCommentModal(lane, d.d, "Dosing");
+                  });
 
-            if (endX < 0) continue;
+              const valStr = d.v.toLocaleString();
+              const pWidth = Math.max(30, valStr.length * 7 + 14);
+              const pHeight = 22;
 
-            const isZero = curr.v === 0;
+              const isZero = d.v === 0;
+              const fill = isZero ? "#f5f5f7" : "var(--accent-blue-dim)";
+              const stroke = isZero ? "#d2d2d7" : "var(--accent-blue)";
+              const textColor = isZero ? "#86868b" : "var(--accent-blue)";
 
-            svg.append("rect")
-                .attr("x", drawStartX)
-                .attr("y", 4)
-                .attr("width", drawWidth)
-                .attr("height", h-8)
-                .attr("fill", isZero ? "#ffffff" : colorScale(curr.v))
-                .attr("stroke", isZero ? "#d2d2d7" : "none")
-                .attr("stroke-width", isZero ? 1 : 0)
-                .attr("rx", 2)
-                .attr("class", "clickable-point")
-                .on("click", (e) => {
-                  e.stopPropagation();
-                  const [mx] = d3.pointer(e, svg.node());
-                  const clickedDay = Math.max(curr.d, Math.min(endD, Math.round(xScale.invert(mx))));
-                  openCommentModal(lane, clickedDay, "Dosing");
-                });
-        }
-    }
+              const rowIndex = d.rowIndex || 0;
+              const cy = 18 + (rowIndex * 28);
+
+              g.append("rect")
+                  .attr("x", cx - pWidth / 2)
+                  .attr("y", cy - pHeight / 2)
+                  .attr("width", pWidth)
+                  .attr("height", pHeight)
+                  .attr("rx", pHeight / 2)
+                  .attr("fill", fill)
+                  .attr("stroke", stroke)
+                  .attr("stroke-width", 1);
+
+              g.append("text")
+                  .attr("x", cx)
+                  .attr("y", cy + 4)
+                  .attr("text-anchor", "middle")
+                  .text(valStr)
+                  .attr("fill", textColor)
+                  .style("font-size", "11px")
+                  .style("font-weight", "700")
+                  .style("pointer-events", "none");
+          }
+      }
+    });
   }
 
   function drawECG(svg, ySvg, xScale, lane) {
@@ -1515,7 +1570,6 @@
     const ref = tData.ref || {};
     let min = d3.min(validData, d=>d.v); let max = d3.max(validData, d=>d.v);
     
-    // Expand domain to include normal ranges if they exist
     if (ref.lo !== undefined && ref.lo !== null) min = Math.min(min, ref.lo);
     if (ref.hi !== undefined && ref.hi !== null) max = Math.max(max, ref.hi);
 
@@ -1523,7 +1577,6 @@
 
     const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
     
-    // 1. Draw Normal Reference Range Lines (Dashed Grey)
     if(ref.hi !== undefined && ref.hi !== null) {
         svg.append("line").attr("x1", 0).attr("x2", 800).attr("y1", y(ref.hi)).attr("y2", y(ref.hi))
            .attr("stroke", "#aeaeb2").attr("stroke-width", 1.5).attr("stroke-dasharray", "4,4").style("pointer-events", "none");
@@ -1533,14 +1586,12 @@
            .attr("stroke", "#aeaeb2").attr("stroke-width", 1.5).attr("stroke-dasharray", "4,4").style("pointer-events", "none");
     }
 
-    // 2. Draw Trend Line connecting ONLY the computed Average points
     const avgData = validData.filter(d => d._isComputedAvg).sort((a,b) => a.d - b.d);
     const color = "#1d1d1f"; 
     
     const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
     svg.append("path").datum(avgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
     
-    // Draw missing connectors
     tData.data.forEach((d, i) => {
       if (d.missing) {
         const prev = avgData.slice().reverse().find(a => a.d < d.d);
@@ -1552,7 +1603,6 @@
       }
     });
     
-    // Sort so black points are rendered on top of grey points
     const sortedValidData = [...validData].sort((a,b) => (a._isComputedAvg ? 1 : 0) - (b._isComputedAvg ? 1 : 0));
     
     svg.selectAll(".dot-lab").data(sortedValidData).enter().append("circle")
@@ -1620,7 +1670,7 @@
           secTitle = "Study Drug";
           let activeDose = getActiveDoseAtDay(day);
           if(activeDose && activeDose.v >= 0) { 
-            chipsHtml = `<div class="study-dose"><span class="study-dose-label">Active Dose</span><span class="study-dose-val">${activeDose.v}</span><span class="study-dose-unit">${activeDose.unit}</span></div>`;
+            chipsHtml = `<div class="study-dose"><span class="study-dose-label">Active Dose</span><span class="study-dose-val">${activeDose.v.toLocaleString()}</span><span class="study-dose-unit">${activeDose.unit}</span></div>`;
           }
         }
         else if (lane.id === 'conmeds') {
@@ -1669,14 +1719,12 @@
           if(data && data.data && data.data.length > 0) {
               const validLabs = data.data.filter(p => p.v !== null || p.missing);
               if(validLabs.length > 0) {
-                  // Find the closest overall day, then grab ALL points on that day
                   const closestPt = validLabs.reduce((p, c) => Math.abs(c.d-day) < Math.abs(p.d-day) ? c : p);
                   if(Math.abs(closestPt.d-day) <= 14) {
                     const targetDay = closestPt.d;
                     const dayPoints = validLabs.filter(p => p.d === targetDay);
-                    let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive Protein", "hs-CRP");
+                    let sName = tName.replace(/\s*\(.*?\)\s*/g, '').replace("Albumin", "Alb").replace("Total Protein", "TP").replace("Creatinine", "Cr").replace("Alanine Aminotransferase", "ALT").replace("Aspartate Aminotransferase", "AST").replace("High Sensitivity C Reactive CRP", "hs-CRP");
                     
-                    // Render a chip for every record found on that day
                     dayPoints.forEach(dp => {
                         const color = dp._isComputedAvg ? "#1d1d1f" : "#aeaeb2";
                         const sfx = (dp._isComputedAvg && dayPoints.length > 1) ? " (Avg)" : "";
