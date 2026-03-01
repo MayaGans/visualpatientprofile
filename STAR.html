@@ -225,7 +225,7 @@
     /* ─── AXIS & BRUSH LANES ─── */
     #x-axis-lane {
       position: sticky;
-      bottom: 60px;
+      bottom: 40px; /* Changed from 60px to 40px */
       z-index: 47;
       background: var(--bg-panel);
       border-top: 1px solid var(--border-light);
@@ -242,7 +242,10 @@
     
     #context-container svg { overflow: visible; }
     .brush .selection { fill: var(--accent-blue); fill-opacity: 0.1; stroke: var(--accent-blue); stroke-width: 1px; }
-    .brush .handle { fill: var(--accent-blue); stroke: none; width: 4px !important; height: 24px !important; y: 18px !important; rx: 2px; cursor: ew-resize; transition: fill 0.15s; }
+    
+    /* Shrink the handles and center them in the new 40px lane */
+    .brush .handle { fill: var(--accent-blue); stroke: none; width: 4px !important; height: 16px !important; y: 12px !important; rx: 2px; cursor: ew-resize; transition: fill 0.15s; }
+    
     .brush .handle--w { transform: translateX(3px); }
     .brush .handle--e { transform: translateX(-1px); }
     .brush .handle:hover { fill: #0050a3; }
@@ -286,13 +289,14 @@
     .tt-val.ae-3 { background: #fff0f0; color: #d93025; } 
     .tt-val.ae-4 { background: #f4eafe; color: #7b2cb7; } 
 
-    /* COMMENT MODAL & ALERTS */
+    /* MODALS (Comments & Custom Groups) */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
     .modal-backdrop.open { opacity: 1; pointer-events: all; }
     .modal-window { background: var(--bg-panel); border-radius: 16px; width: 100%; max-width: 460px; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; transform: translateY(10px) scale(0.98); transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease; opacity: 0; display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
     .modal-backdrop.open .modal-window { transform: translateY(0) scale(1); opacity: 1; }
     .modal-head { padding: 15px 18px 13px; border-bottom: 1px solid var(--divider); background: #fafafa; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .modal-head-left { display: flex; flex-direction: column; gap: 3px; }
+    .modal-head-title { font-weight: 600; font-size: 14px; }
     .modal-context { font-size: 11px; color: var(--text-sec); display: flex; align-items: center; gap: 5px; }
     .ctx-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-blue); flex-shrink: 0; }
     .modal-close { width: 26px; height: 26px; border-radius: 50%; background: #e5e5ea; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; transition: background 0.15s; flex-shrink: 0; }
@@ -336,6 +340,10 @@
     .comment-author { font-size: 12px; font-weight: 600; color: var(--text-main); }
     .comment-time { font-size: 10px; color: var(--text-sec); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
     .comment-body { font-size: 13px; color: var(--text-main); line-height: 1.5; word-break: break-word; }
+
+    /* Custom Group Checklist */
+    .cg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-main); cursor: pointer; user-select: none; padding: 2px 0; }
+    .cg-item input { cursor: pointer; width: 14px; height: 14px; margin: 0; }
   </style>
 </head>
 <body>
@@ -419,13 +427,13 @@
         <div class="lane-content" id="x-axis-container" style="height: 35px; background: white;"></div>
         <div class="lane-y-axis" style="background: white; border-left: 1px solid #e5e5ea; z-index: 50;"></div>
       </div>
-      
-      <div class="lane" id="context-lane" style="height: 60px; border-bottom: none;">
+
+      <div class="lane" id="context-lane" style="height: 40px; border-bottom: none;">
         <div class="lane-header" style="background: white; border-right: 1px solid #e5e5ea; z-index: 50; flex-direction: column; justify-content: center;">
           <div class="lane-title" style="margin: 0;">TIMELINE</div>
           <div class="lane-subtitle">Global Context</div>
         </div>
-        <div class="lane-content" id="context-container" style="height: 60px; background: #fafafa;"></div>
+        <div class="lane-content" id="context-container" style="height: 40px; background: #fafafa;"></div>
         <div class="lane-y-axis" style="background: white; border-left: 1px solid #e5e5ea; z-index: 50;"></div>
       </div>
 
@@ -467,6 +475,24 @@
       <div class="divider-line"></div>
     </div>
     <div class="comments-list" id="comments-list"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="cg-backdrop" onclick="handleCGBackdropClick(event)">
+  <div class="modal-window" id="cg-modal">
+    <div class="modal-head">
+      <div class="modal-head-title">Create Custom Lab Group</div>
+      <button class="modal-close" onclick="closeCustomGroupModal()">✕</button>
+    </div>
+    <div class="compose-area" style="display:flex; flex-direction:column; gap:10px;">
+      <input type="text" id="cg-name" class="compose-field" style="min-height:36px; padding:8px 12px;" placeholder="Group Name (e.g., Liver Panel)">
+      <div style="font-size: 11px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; margin-top: 5px;">Select Labs</div>
+      <div id="cg-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; background: white; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px;">
+        </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+        <button class="btn-post" onclick="saveCustomGroup()">Save Group</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -631,16 +657,17 @@
   let minDay = 0, maxDay = 140, trueMaxDay = 140;
   let severityVector, severityScaler;
   
-  // DYNAMIC MENUS (Computed per patient)
+  // DYNAMIC MENUS
   let dynamicLabs = {}; 
   let dynamicVitals = [];
   let dynamicEcg = [];
   let dynamicClinical = [];
   
-  // RAW TIMEPOINTS (Used to render Context brush density)
+  // NEW: Persistent storage for custom lab groups across patients
+  let globalCustomGroups = {};
+  
   let allGlobalDays = [];
 
-  // STATE (Sets for O(1) lookups and easy toggling)
   let filterState = {
     activeLabSubtab: "",
     activeNavTab: "labs",
@@ -650,10 +677,7 @@
     selectedClinical: new Set()
   };
   
-  // DRAG & DROP TRACKER
   let laneOrder = [];
-  
-  // REACTIVE SCALE (Will be updated by Brush)
   let currentXScale = d3.scaleLinear().domain([0, 100]).range([0, 800]);
   let currentActiveLayout = [];
 
@@ -766,6 +790,13 @@
     });
     dynamicLabs = { "All": allLabsList, ...dynamicLabs };
     
+    // --- NEW: Inject Global Custom Groups across subjects ---
+    Object.keys(globalCustomGroups).forEach(gName => {
+        const savedLabNames = globalCustomGroups[gName];
+        // Match the global saved names against this specific patient's available labs
+        dynamicLabs[gName] = allLabsList.filter(lab => savedLabNames.includes(lab.name));
+    });
+    
     dynamicVitals = payload.vitalOptions ? payload.vitalOptions.map(v => v.name) : [];
     dynamicEcg = payload.ecgOptions ? payload.ecgOptions.map(e => e.name) : [];
 
@@ -793,11 +824,10 @@
     filterState.selectedVitals.forEach(v => laneOrder.push(`vital-${v}`));
     filterState.selectedEcg.forEach(e => laneOrder.push(`ecg-${e}`));
 
-    currentXScale.domain([minDay, maxDay]); 
+    currentXScale.domain([minDay, maxDay]);
 
     refreshAllFilters();
     renderViz();
-    
   }
 
   // --- NEW SCAFFOLD UI FUNCTIONS ---
@@ -839,9 +869,12 @@
   }
   
   function renderLabSubtabs() {
-    document.getElementById("labSubtabs").innerHTML = Object.keys(dynamicLabs).map(cat =>
+    let tabsHtml = Object.keys(dynamicLabs).map(cat =>
       `<button class="fe-subtab ${filterState.activeLabSubtab === cat ? 'active' : ''}" onclick="switchLabSubtab('${cat}')">${cat}</button>`
     ).join("");
+    
+    tabsHtml += `<button class="fe-subtab" style="border-style: dashed; border-color: var(--accent-blue); color: var(--accent-blue); background: transparent;" onclick="openCustomGroupModal()">+ New Group</button>`;
+    document.getElementById("labSubtabs").innerHTML = tabsHtml;
   }
   
   function renderLabChips() {
@@ -905,24 +938,10 @@
     renderViz();
   }
   
-  function toggleClinicalPill(id) {
-    toggle('clinical', id);
-  }
-  
-  function switchLabSubtab(cat) {
-    filterState.activeLabSubtab = cat;
-    renderLabSubtabs();
-    renderLabChips();
-  }
-  
-  function openToTab(tab) {
-    document.getElementById("filterBar").classList.add("open");
-    setNavTab(tab, document.getElementById(`nav-${tab}`));
-  }
-  
-  function toggleFilterBar() {
-    document.getElementById("filterBar").classList.toggle("open");
-  }
+  function toggleClinicalPill(id) { toggle('clinical', id); }
+  function switchLabSubtab(cat) { filterState.activeLabSubtab = cat; renderLabSubtabs(); renderLabChips(); }
+  function openToTab(tab) { document.getElementById("filterBar").classList.add("open"); setNavTab(tab, document.getElementById(`nav-${tab}`)); }
+  function toggleFilterBar() { document.getElementById("filterBar").classList.toggle("open"); }
   
   function setNavTab(tab, el) {
     filterState.activeNavTab = tab;
@@ -942,22 +961,13 @@
         });
     }
     else if (tab === 'vitals') {
-        dynamicVitals.forEach(v => {
-            filterState.selectedVitals.add(v);
-            if(!laneOrder.includes(`vital-${v}`)) laneOrder.push(`vital-${v}`);
-        });
+        dynamicVitals.forEach(v => { filterState.selectedVitals.add(v); if(!laneOrder.includes(`vital-${v}`)) laneOrder.push(`vital-${v}`); });
     }
     else if (tab === 'ecg') {
-        dynamicEcg.forEach(e => {
-            filterState.selectedEcg.add(e);
-            if(!laneOrder.includes(`ecg-${e}`)) laneOrder.push(`ecg-${e}`);
-        });
+        dynamicEcg.forEach(e => { filterState.selectedEcg.add(e); if(!laneOrder.includes(`ecg-${e}`)) laneOrder.push(`ecg-${e}`); });
     }
     else if (tab === 'clinical') {
-        dynamicClinical.forEach(c => {
-            filterState.selectedClinical.add(c.id);
-            if(!laneOrder.includes(c.id)) laneOrder.push(c.id);
-        });
+        dynamicClinical.forEach(c => { filterState.selectedClinical.add(c.id); if(!laneOrder.includes(c.id)) laneOrder.push(c.id); });
     }
     refreshAllFilters(tab);
     renderViz();
@@ -1020,17 +1030,9 @@
         
         let placed = false;
         for(let i=0; i<levels.length; i++) {
-            if (levels[i] < startX) {
-                levels[i] = endX;
-                d.rowIndex = i;
-                placed = true;
-                break;
-            }
+            if (levels[i] < startX) { levels[i] = endX; d.rowIndex = i; placed = true; break; }
         }
-        if(!placed) {
-            d.rowIndex = levels.length;
-            levels.push(endX);
-        }
+        if(!placed) { d.rowIndex = levels.length; levels.push(endX); }
     });
     
     return Math.max(40, 16 + (levels.length * 28));
@@ -1295,12 +1297,19 @@
         
         let h = 50;
         if (base.type === 'conmeds') h = calculateRequiredHeight(clinicalData.conmeds);
-        else if (base.type === 'ae') h = calculateRequiredHeight(clinicalData.ae);
         else if (base.type === 'dosing') h = calculateDosingHeight(dosingData, xScale);
         else if (base.type === 'addv') h = 50;
+        else if (base.type === 'ae') {
+            // --- FIX: Guarantee enough height for the severity legend ---
+            const dataHeight = calculateRequiredHeight(clinicalData.ae);
+            const legendHeight = 16 + (severityVector.length * 12);
+            h = Math.max(dataHeight, legendHeight);
+        }
+        
         finalLayout.push({ ...base, height: h }); return;
       }
       
+      // ... rest of the function remains the same ...
       if(id.startsWith("lab-")) { 
           const tName = id.replace("lab-", ""); 
           if(filterState.selectedLabs.has(tName)) { 
@@ -1325,7 +1334,6 @@
 
   // --- VIZ RENDERING ---
   function renderViz() {
-    
     const root = d3.select("#viz-root").html("");
     currentActiveLayout = getLayout(currentXScale);
     
@@ -1459,32 +1467,67 @@
 
   function setupContextBrush() {
     const container = d3.select("#context-container").html("");
-    const svg = container.append("svg").attr("width", 800).attr("height", 60);
+    const svg = container.append("svg").attr("width", 800).attr("height", 40);
     
     const xContext = d3.scaleLinear().domain([minDay, maxDay]).range([0, 800]);
 
-    svg.selectAll(".density-dot")
-       .data(allGlobalDays)
-       .enter()
-       .append("circle")
-       .attr("class", "density-dot")
-       .attr("cx", d => xContext(d))
-       .attr("cy", d => 5 + Math.random() * 30)
-       .attr("r", 2)
+    const histogram = d3.bin()
+        .domain(xContext.domain())
+        .thresholds(xContext.ticks(40)); 
+
+    const bins = histogram(allGlobalDays);
+
+    const densityData = bins.map(b => ({
+        day: (b.x0 + b.x1) / 2,
+        count: b.length
+    }));
+
+    densityData.unshift({ day: minDay, count: 0 });
+    densityData.push({ day: maxDay, count: 0 });
+
+    const maxCount = d3.max(densityData, d => d.count) || 1;
+    
+    // Base is at 20px, peaks rise to 5px (15px max height)
+    const yContext = d3.scaleLinear().domain([0, maxCount]).range([20, 5]); 
+
+    const area = d3.area()
+        .x(d => xContext(d.day))
+        .y0(20)
+        .y1(d => yContext(d.count))
+        .curve(d3.curveBasis); 
+
+    const line = d3.line()
+        .x(d => xContext(d.day))
+        .y(d => yContext(d.count))
+        .curve(d3.curveBasis);
+
+    svg.append("path")
+       .datum(densityData)
        .attr("fill", "var(--accent-blue)")
-       .attr("opacity", 0.2);
+       .attr("opacity", 0.15)
+       .attr("d", area)
+       .style("pointer-events", "none"); 
+
+    svg.append("path")
+       .datum(densityData)
+       .attr("fill", "none")
+       .attr("stroke", "var(--accent-blue)")
+       .attr("stroke-width", 1.5)
+       .attr("opacity", 0.6)
+       .attr("d", line)
+       .style("pointer-events", "none");
 
     const xAxisStatic = d3.axisBottom(xContext).ticks(10);
     svg.append("g")
-       .attr("transform", "translate(0, 40)")
+       .attr("transform", "translate(0, 20)") // Axis moved up to 20px to leave room for text
        .call(xAxisStatic)
        .selectAll("text")
        .attr("class", "x-tick-label");
 
+    // Brush extent matches the new 40px height
     const brush = d3.brushX()
-       .extent([[0, 0], [800, 60]])
+       .extent([[0, 0], [800, 40]])
        .on("brush end", (event) => {
-         // --- CRITICAL FIX: Only redraw if the event came from an actual user mouse/touch interaction! ---
          if (event.selection && event.sourceEvent) {
            const newDomain = event.selection.map(xContext.invert, xContext);
            redrawLanes(newDomain);
@@ -1495,12 +1538,10 @@
        .attr("class", "brush")
        .call(brush);
        
-    // --- CRITICAL FIX: Restore the brush handles to match the current zoom state ---
     const curDomain = currentXScale.domain();
     let startPx = xContext(curDomain[0]);
     let endPx = xContext(curDomain[1]);
     
-    // Failsafes just in case of weird math bounds
     if (isNaN(startPx)) startPx = 0;
     if (isNaN(endPx)) endPx = 800;
     
@@ -1858,7 +1899,6 @@
             if (p._isComputedAvg) html += ` <span style="font-size:10px; color:var(--text-sec);">(Daily Average)</span>`;
             html += `</div>`;
             
-            // --- FIX: Show the alert box even if there is no comment string provided ---
             if (p.clinsig) {
                 const alertText = p.comment ? p.comment : "Clinically Significant Flag";
                 html += `
@@ -1881,6 +1921,49 @@
 
   function closeCommentModal() { document.getElementById("comment-backdrop").classList.remove("open"); currentCommentTarget = null; renderViz(); }
   function handleBackdropClick(e) { if (e.target === document.getElementById("comment-backdrop")) closeCommentModal(); }
+
+  // --- NEW: CUSTOM GROUP MODAL LOGIC ---
+  function openCustomGroupModal() {
+      document.getElementById("cg-name").value = "";
+      const allLabs = dynamicLabs["All"] || [];
+      const listEl = document.getElementById("cg-list");
+      listEl.innerHTML = allLabs.map(lab => 
+          `<label class="cg-item"><input type="checkbox" value="${lab.name}"> ${lab.name}</label>`
+      ).join("");
+      document.getElementById("cg-backdrop").classList.add("open");
+  }
+
+  function closeCustomGroupModal() {
+      document.getElementById("cg-backdrop").classList.remove("open");
+  }
+
+  function handleCGBackdropClick(e) {
+      if (e.target === document.getElementById("cg-backdrop")) closeCustomGroupModal();
+  }
+
+  function saveCustomGroup() {
+      const name = document.getElementById("cg-name").value.trim();
+      if (!name) { alert("Please enter a group name."); return; }
+      if (dynamicLabs[name]) { alert("Group name already exists."); return; }
+      
+      const checkboxes = document.querySelectorAll('#cg-list input[type="checkbox"]:checked');
+      
+      // Store just the names of the labs so it's universal across patients
+      const selectedNames = Array.from(checkboxes).map(cb => cb.value);
+      
+      if (selectedNames.length === 0) { alert("Please select at least one lab."); return; }
+      
+      // Save globally for all future patients
+      globalCustomGroups[name] = selectedNames;
+      
+      // Apply immediately to current patient
+      const allLabs = dynamicLabs["All"];
+      const selectedLabObjs = allLabs.filter(lab => selectedNames.includes(lab.name));
+      dynamicLabs[name] = selectedLabObjs; 
+      
+      closeCustomGroupModal();
+      switchLabSubtab(name); 
+  }
 
   function renderCommentsList() {
     if(!currentCommentTarget) return;
@@ -1951,22 +2034,15 @@
 
     container.on("mousemove", (event) => {
       if(document.getElementById("comment-backdrop").classList.contains("open")) return;
+      if(document.getElementById("cg-backdrop").classList.contains("open")) return; // Don't show tooltip while building custom groups
       
       const [mx, my] = d3.pointer(event, container.node());
       if (my > dynamicHeight + 35) { cursor.style("display", "none"); tooltip.style("display", "none"); return; }
       
       const graphX = mx - 160;
       if(graphX < 0 || graphX > 800) { cursor.style("display","none"); tooltip.style("display","none"); return; }
-
+      
       const day = Math.round(currentXScale.invert(graphX));
-      const snappedX = currentXScale(day);
-      
-      if (snappedX < 0 || snappedX > 800) { 
-          cursor.style("display","none"); 
-          tooltip.style("display","none"); 
-          return; 
-      }
-      
       cursor.style("display", "block").style("left", graphX + "px");
 
       let secData = { dosing: [], labs: [], vitals: [], ecg: [], ae: [], conmeds: [], addv: [] };
@@ -1984,7 +2060,7 @@
         else if (lane.type === 'dosing') {
             let activeDose = getActiveDoseAtDay(day);
             if(activeDose && activeDose.v >= 0) { 
-                secData.dosing.push(`<div class="tt-row"><div class="tt-label" style="color:var(--accent-blue)">Active Dose</div><div class="tt-vals"><span class="tt-val" style="background:var(--accent-blue-dim); color:var(--accent-blue);">${activeDose.v.toLocaleString()} <span class="tt-unit">${activeDose.unit}</span></span></div></div>`);
+                secData.dosing.push(`<div class="tt-row"><div class="tt-label" style="color:var(--accent-blue)">Active Dose</div><div class="tt-vals"><span class="tt-val" style="background:var(--accent-blue-dim); color:var(--accent-blue);"><span>${activeDose.v.toLocaleString()}</span> <span class="tt-unit">${activeDose.unit}</span></span></div></div>`);
             }
         }
         else if (lane.type === 'conmeds' && clinicalData.conmeds) {
