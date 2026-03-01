@@ -1732,7 +1732,7 @@
     if(min === max) { min -= 10; max += 10; }
 
     const y = d3.scaleLinear().domain([min, max]).range([lane.height-6, 6]);
-    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
     
     svg.append("path").datum(validData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events", "none");
     
@@ -1807,7 +1807,7 @@
     const avgData = validData.filter(d => d._isComputedAvg).sort((a,b) => a.d - b.d);
     const color = "#1d1d1f"; 
     
-    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
+    const line = d3.line().x(d=>xScale(d.d)).y(d=>y(d.v)).curve(d3.curveLinear);
     svg.append("path").datum(avgData).attr("d", line).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).style("pointer-events","none");
     
     tData.data.forEach((d, i) => {
